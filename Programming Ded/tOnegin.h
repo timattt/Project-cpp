@@ -220,7 +220,7 @@ const char* recreateBuffer(const char *raw, int &len, const char *un) {
 //!@param lines_quant - there will be stored quantity of lines.
 //!@returns array of lines.
 const char* tReadMappedBuffer(const char *name, int &buffer_size) {
-	assert(name != NULL && buffer_size > 0);
+	assert(name != NULL);
 
 	HANDLE file = CreateFileA(name, GENERIC_READ,
 	FILE_SHARE_READ, NULL,
@@ -399,12 +399,12 @@ const int rhyme_map[rhyme_map_size] = { 1, 3, 2, 4, 10, 11, 5, 6, 9, 12, 7, 8,
 const int rhyme_group_sizes[] = { 2, 4, 4, 4 };
 const int total_groups = 4;
 
-int main() {
+void tCreateOneginRave(char *input, char *output) {
 	int lines_quantity = 0;
 	int buffer_size = 0;
 	int total_rhyme_blocks = 0;
 
-	const char *buffer = tReadMappedBuffer("RAJ.txt", buffer_size);
+	const char *buffer = tReadMappedBuffer(input, buffer_size);
 
 	char **lines = tReindex(buffer, buffer_size, lines_quantity);
 
@@ -418,9 +418,7 @@ int main() {
 	const char **lines_raved = repackGroups(groups, total_groups,
 			total_rhyme_blocks, rhyme_map, rhyme_group_sizes, rhyme_map_size);
 
-	tWriteToFile(lines_raved, lines_quantity, "OUT.txt");
+	tWriteToFile(lines_raved, lines_quantity, output);
 
 	free(lines_raved);
-
-	return 0;
 }
