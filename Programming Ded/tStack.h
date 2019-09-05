@@ -50,6 +50,7 @@ private:
 public:
 	//!Inserts object on the top of this stack.
 	void push(const T &el) {
+		assert(current + 1 != end);
 		checkCanaries();
 		current = (char*) new (current) T(el);
 		current += sizeof(T);
@@ -57,6 +58,7 @@ public:
 
 	//!Delete object from top.
 	T pop() {
+		assert(current != begin);
 		checkCanaries();
 		T res = (*(T*) current);
 		current -= sizeof(T);
