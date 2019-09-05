@@ -8,12 +8,16 @@ void* operator new(size_t s, char *p) {
 const int total_canaries = 2;
 const int canaries_value = 111;
 
+//!Stack created by timattt
+//!It is armed with simple memory protection.
+//!
 template<typename T, int size> struct tStack {
 	char mem[size * sizeof(T) + 2 * total_canaries];
 	char *begin;
 	char *end;
 	char *current;
 
+public:
 	tStack() :
 			begin(mem), end(mem + size * sizeof(T) + total_canaries), current(
 					mem) {
@@ -23,6 +27,8 @@ template<typename T, int size> struct tStack {
 		}
 	}
 
+private:
+	//!This function is not visible. It checks that memory is safe.
 	bool checkCanaries() {
 		bool result = 0;
 
@@ -41,13 +47,15 @@ template<typename T, int size> struct tStack {
 
 		return result;
 	}
-
+public:
+	//!Inserts object on the top of this stack.
 	void push(const T &el) {
 		checkCanaries();
 		current = (char*) new (current) T(el);
 		current += sizeof(T);
 	}
 
+	//!Delete object from top.
 	T pop() {
 		checkCanaries();
 		T res = (*(T*) current);
