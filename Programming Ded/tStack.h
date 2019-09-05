@@ -1,6 +1,10 @@
 #include <bits/stdc++.h>
 using namespace std;
 
+/*
+ *	Author timattt
+ */
+
 void* operator new(size_t s, char *p) {
 	return p;
 }
