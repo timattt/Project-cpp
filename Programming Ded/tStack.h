@@ -16,6 +16,7 @@ const int canaries_value = 111;
 //!It is armed with simple memory protection.
 //!
 template<typename T, int size> struct tStack {
+private:
 	char mem[size * sizeof(T) + 2 * total_canaries];
 	char *begin;
 	char *end;
@@ -33,7 +34,7 @@ public:
 
 private:
 	//!This function is not visible. It checks that memory is safe.
-	bool checkCanaries() {
+	bool tCheckCanaries() {
 		bool result = 0;
 
 		for (int i = 0; i < total_canaries; i++) {
@@ -53,17 +54,17 @@ private:
 	}
 public:
 	//!Inserts object on the top of this stack.
-	void push(const T &el) {
+	void tPush(const T &el) {
 		assert(current + 1 != end);
-		checkCanaries();
+		tCheckCanaries();
 		current = (char*) new (current) T(el);
 		current += sizeof(T);
 	}
 
 	//!Delete object from top.
-	T pop() {
+	T tPop() {
 		assert(current != begin);
-		checkCanaries();
+		tCheckCanaries();
 		T res = (*(T*) current);
 		current -= sizeof(T);
 		return res;
