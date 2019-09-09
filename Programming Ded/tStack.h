@@ -10,7 +10,7 @@ void* operator new(size_t s, char *p) {
 }
 
 const int total_canaries = 2;
-const int canaries_value = 111;
+const int canary_value = 111;
 
 //!Stack created by timattt
 //!It is armed with simple memory protection.
@@ -26,9 +26,12 @@ public:
 	tStack() :
 			begin(mem), end(mem + size * sizeof(T) + total_canaries), current(
 					mem) {
+		for (int i = total_canaries; i < total_canaries + size * sizeof(T); i++) {
+			mem[i] = 0;
+		}
 		for (int i = 0; i < total_canaries; i++) {
-			mem[i] = canaries_value;
-			mem[i + size * sizeof(T) + total_canaries] = canaries_value;
+			mem[i] = canary_value;
+			mem[i + size * sizeof(T) + total_canaries] = canary_value;
 		}
 	}
 
@@ -38,9 +41,9 @@ private:
 		bool result = 0;
 
 		for (int i = 0; i < total_canaries; i++) {
-			if (mem[i] != canaries_value
+			if (mem[i] != canary_value
 					|| mem[i + size * sizeof(T) + total_canaries]
-							!= canaries_value) {
+							!= canary_value) {
 				result = 1;
 			}
 		}
