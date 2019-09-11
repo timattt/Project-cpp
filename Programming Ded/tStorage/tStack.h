@@ -1,5 +1,5 @@
 #include <bits/stdc++.h>
-using namespace std;
+//using namespace std;
 
 /*
  *	Author timattt
@@ -18,17 +18,17 @@ const int canary_value = 111;
 template<typename T, int size> struct tStack {
 private:
 	char mem[size * sizeof(T) + 2 * total_canaries];
+
 	char *begin;
 	char *end;
 	char *current;
 
 public:
 	tStack() :
-			begin(mem), end(mem + size * sizeof(T) + total_canaries), current(
-					mem) {
-		for (int i = total_canaries; i < total_canaries + size * sizeof(T); i++) {
-			mem[i] = 0;
-		}
+		    mem     ({}),
+			begin   (mem),
+			end     (mem + size * sizeof(T) + total_canaries),
+			current (mem) {
 		for (int i = 0; i < total_canaries; i++) {
 			mem[i] = canary_value;
 			mem[i + size * sizeof(T) + total_canaries] = canary_value;
@@ -49,7 +49,7 @@ private:
 		}
 
 		if (result) {
-			cerr << "Memory broken through!";
+			std::cerr << "Memory broken through!";
 			assert(false);
 		}
 
