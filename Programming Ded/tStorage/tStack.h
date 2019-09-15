@@ -1,3 +1,6 @@
+#ifndef T_STACK
+#define T_STACK
+
 #include "tContainer.h"
 
 namespace tStorage {
@@ -9,7 +12,7 @@ namespace tStorage {
 //!Stack created by timattt
 //!It is armed with simple memory protection.
 //!
-template<typename T, int size, int (*hash)(char*, int) = tDefaultHash> class tStack: public tContainer<
+template<typename T, int size, int (*hash)(char*, int) = tDefaultHash> class tStack: private tContainer<
 		T, size, (*hash)> {
 
 private:
@@ -33,9 +36,11 @@ public:
 		return res;
 	}
 
-	//!
+	//!Returns quantity of objects in this stack.
 	int tGetSize() {
 		return total_objects;
 	}
 };
 }
+
+#endif

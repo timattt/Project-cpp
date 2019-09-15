@@ -3,7 +3,7 @@
 
 #include <bits/stdc++.h>
 
-//namespace tStorage {
+namespace tStorage {
 
 const int total_canaries = 2;
 const char canary_value = 111;
@@ -35,13 +35,6 @@ private:
 		return p;
 	}
 public:
-	tContainer() :
-			hash_value(0) {
-		tUpdateHash();
-		tRefillCanaries();
-		tCleanMemoryFromTo(0, size);
-	}
-protected:
 	//!This function writes element T to the given cell in containers memory.
 	void tWriteTo(int adress, const T &el) {
 		tCheckAll();
@@ -64,6 +57,14 @@ protected:
 		}
 		tUpdateHash();
 	}
+
+	tContainer() :
+			hash_value(0) {
+		tUpdateHash();
+		tRefillCanaries();
+		tCleanMemoryFromTo(0, size);
+	}
+protected:
 	char* tGetBegin() {
 		tCheckAll();
 		return mem;
@@ -118,6 +119,6 @@ private:
 
 };
 
-//}
+}
 
 #endif
