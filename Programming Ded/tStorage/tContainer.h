@@ -98,7 +98,7 @@ private:
 	//!If something is not correct then tMemBroken() function is used.
 	bool tCheckHash() {
 		bool result = hash_value
-				!= hash(tGetBegin() + total_canaries, size * sizeof(T));
+				!= hash(mem + total_canaries, size * sizeof(T));
 		return result;
 	}
 	void tRefillCanaries() {
@@ -113,7 +113,7 @@ private:
 	}
 	//!This function changes hash_value variable using hash function.
 	void tUpdateHash() {
-		hash_value = hash(tGetBegin() + total_canaries, size * sizeof(T));
+		hash_value = hash(mem + total_canaries, size * sizeof(T));
 	}
 
 };

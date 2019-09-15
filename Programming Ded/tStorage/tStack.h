@@ -33,6 +33,7 @@ public:
 		return res;
 	}
 
+	//!
 	int tGetSize() {
 		return total_objects;
 	}
