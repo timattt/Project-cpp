@@ -4,7 +4,6 @@
 /*
  *	Author timattt
  */
-
 int tCount(const char *line, char symb);
 int tStrlen(const char *str);
 int tGetFileSize(const char *name);
