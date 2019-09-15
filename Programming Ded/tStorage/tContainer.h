@@ -6,7 +6,7 @@
 namespace tStorage {
 
 const int total_canaries = 2;
-const char canary_value = 111;
+const char canary_value = 255;
 
 //!This constant is used in default hashing algorithm
 const int P = 31;
@@ -35,6 +35,32 @@ private:
 		return p;
 	}
 public:
+	//!This function return string that contains 1 and 0 everything from containers memory.
+	char* tSeeBits() {
+		char *res = (char*) calloc(
+				4 + 2 * (8 * size * sizeof(T) + 8 * 2 * total_canaries),
+				sizeof(char));
+		char *tmp = res;
+		*tmp = '|';
+		tmp++;
+		for (unsigned i = 0; i < 2 * total_canaries + size * sizeof(T); i++) {
+			char add = mem[i];
+			for (int j = 0; j < 8; j++) {
+				(*tmp) = (char) (!!((add << j) & 0x80)) + '0';
+				tmp++;
+			}
+			(*tmp) = '|';
+			tmp++;
+			if (i + 1 == total_canaries
+					|| i + 1 == total_canaries + size * sizeof(T)) {
+				(*tmp) = '|';
+				tmp++;
+				(*tmp) = '|';
+				tmp++;
+			}
+		}
+		return res;
+	}
 	//!This function writes element T to the given cell in containers memory.
 	void tWriteTo(int adress, const T &el) {
 		tCheckAll();

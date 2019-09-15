@@ -10,17 +10,16 @@ namespace tStorage {
  */
 
 //!Stack created by timattt
-//!It is armed with simple memory protection.
+//!It is armed with memory protection. Hash is always checked.
 //!
 template<typename T, int size, int (*hash)(char*, int) = tDefaultHash> class tStack: private tContainer<
 		T, size, (*hash)> {
-
 private:
 	int total_objects = 0;
 	using tContainer<T, size, (*hash)>::tWriteTo;
 	using tContainer<T, size, (*hash)>::tGetFrom;
 public:
-
+	using tContainer<T, size, (*hash)>::tSeeBits;
 	//!Inserts object on the top of this stack.
 	void tPush(const T &el) {
 		assert(total_objects + 1 != size);
