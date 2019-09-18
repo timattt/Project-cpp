@@ -24,7 +24,8 @@ int tDefaultHash(char *arg, const int sz) {
 }
 
 //!Stack created by timattt
-//!It is armed with simple memory protection.
+//!It is armed with memory protection. Hash is always checked so every simple operation is escorted
+//!with invoking tCheckAll() function which is O(n).
 template<typename T, int size, int (*hash)(char*, int) = tDefaultHash> class tContainer {
 
 private:
@@ -35,54 +36,142 @@ private:
 	void* operator new(size_t s, char *p) {
 		return p;
 	}
-public:
-	T operator[](std::size_t idx) {
-		return tGetFrom(idx);
-	}
-	//!This function return string that contains 1 and 0 everything from containers memory.
-	char* tSeeBits() {
-		tCheckAll();
-		char *res = (char*) calloc(
-				4 + 2 * (8 * size * sizeof(T) + 8 * 2 * total_canaries),
-				sizeof(char));
-		char *tmp = res;
-		*tmp = '|';
-		tmp++;
-		for (unsigned i = 0; i < 2 * total_canaries + size * sizeof(T); i++) {
-			char add = mem[i];
-			for (int j = 0; j < 8; j++) {
-				(*tmp) = (char) (!!((add << j) & 0x80)) + '0';
-				tmp++;
-			}
-			(*tmp) = '|';
-			tmp++;
-			if (i + 1 == total_canaries
-					|| i + 1 == total_canaries + size * sizeof(T)) {
-				(*tmp) = '|';
-				tmp++;
-				(*tmp) = '|';
-				tmp++;
+	//!This function is not visible. It checks that memory is safe.
+	bool tCheckCanaries() {
+		bool result = 0;
+
+		for (int i = 0; i < total_canaries; i++) {
+			if (mem[i] != canary_value
+					|| mem[i + size * sizeof(T) + total_canaries]
+							!= canary_value) {
+				result = 1;
 			}
 		}
 
+		return result;
+	}
+	//!This function checks that current function hash is equals to saved hash.
+	//!This means that container is not broken.
+	//!If something is not correct then tMemBroken() function is used.
+	bool tCheckHash() {
+		bool result = hash_value
+				!= hash(mem + total_canaries, size * sizeof(T));
+		return result;
+	}
+	//!Fills canaries in memory with value from constant.
+	void tRefillCanaries() {
+		for (unsigned i = 0; i < total_canaries; i++) {
+			mem[i + sizeof(T) * size + total_canaries] = canary_value;
+			mem[i] = canary_value;
+		}
+	}
+	//!Invoke this function if something went wrong!
+	void tMemBroken() {
+		std::cerr << "Memory broken through!\n";
+		assert(false);
+	}
+	//!This function changes hash_value variable using hash function.
+	void tUpdateHash() {
+		hash_value = hash(mem + total_canaries, size * sizeof(T));
+	}
+
+	//!Writes char bits from [var] into [to].
+	void tWriteBits(char var, char *to) {
+		for (int byte_i = 0; byte_i < size * 8; byte_i++) {
+			to[byte_i] = (char) (!!((var << byte_i) & 0x80)) + '0';
+		}
+	}
+
+public:
+	//! Invokes tGetFrom function.
+	T operator[](std::size_t idx) {
+		return tGetFrom(idx);
+	}
+	//!This function returns very nice looking string that fully describes this containers memory.
+	char* tSeeBits() {
+		tCheckAll();
+
+		int total_bytes = (total_canaries * 2 + size * sizeof(T) //Total bytes
+		) * 8 // Mul 8 to convert into bits
+		+ (1 + total_canaries) // Quantity of brakets to ensure that canaries look like this: |canary1||canary2|...|
+		* 2 // We have 2 canary groups
+		+ (size + 1)  // Same as for canaries we make for every element
+				+ 1; // One char saved for end line symbol to make correct string.
+
+		char *res = (char*) calloc(total_bytes, sizeof(char));
+		char *tmp = res;
+
+		//Mini function that place braket into tmp.
+		auto br = [](char *&tmp) {
+			*tmp = '|';
+			tmp++;
+		};
+
+		// Starting canaries
+		br(tmp);
+		for (int i = 0; i < total_canaries; i++) {
+			tWriteBits(mem[i], tmp);
+			tmp += 8;
+			br(tmp);
+		}
+
+		// Bytes of data
+		br(tmp);
+		for (int i = 0; i < size; i++) {
+			for (unsigned byte_i = 0; byte_i < sizeof(T); byte_i++) {
+				tWriteBits(
+						mem[total_canaries + (i + 1) * sizeof(T) - 1 - byte_i],
+						tmp);
+				tmp += 8;
+
+			}
+			br(tmp);
+		}
+
+		// Ending canaries
+		br(tmp);
+		for (int i = 0; i < total_canaries; i++) {
+			tWriteBits(mem[i + total_canaries + size * sizeof(T)], tmp);
+			tmp += 8;
+			br(tmp);
+		}
+
+		// Creating end of this line.
+		*tmp = '\0';
+
 		return res;
 	}
-	//!This function writes element T to the given cell in containers memory.
-	void tWriteTo(int adress, const T &el) {
+
+	//!This function writes element T to the given byte in containers memory.
+	void tWriteTo_b(unsigned adress_b, const T &el) {
 		tCheckAll();
-		assert(adress >= 0 && adress < size);
-		new (mem + (adress * sizeof(T) + total_canaries)) T(el);
+		assert(
+				adress_b >= 0
+						&& adress_b < size * sizeof(T) + 2 * total_canaries);
+		new (mem + adress_b) T(el);
 		tUpdateHash();
 	}
-	T tGetFrom(int adress) {
+	//!Returns object from given byte.
+	T tGetFrom_b(unsigned adress_b) {
 		tCheckAll();
-		assert(adress >= 0 && adress < size);
-		T res = (*(T*) (mem + (adress * sizeof(T) + total_canaries)));
+		assert(
+				adress_b >= 0
+						&& adress_b < size * sizeof(T) + 2 * total_canaries);
+		T res = (*(T*) (mem + adress_b));
 		return res;
 	}
+	//!This function writes element T to the given cell.
+	void tWriteTo(unsigned adress, const T &el) {
+		tWriteTo_b(adress * sizeof(T) + total_canaries, el);
+	}
+	//!Returns object from given cell.
+	T tGetFrom(unsigned adress) {
+		return tGetFrom_b(adress * sizeof(T) + total_canaries);
+	}
 	//!This function cleans (places zeros) in this segment [a, b);
-	void tCleanMemoryFromTo(int a, int b) {
+	void tCleanMemoryFromTo(unsigned a, unsigned b) {
 		tCheckAll();
+		assert(a < b && b < size * sizeof(T) + 2 * total_canaries);
 		for (unsigned i = a * sizeof(T) + total_canaries;
 				i < b * sizeof(T) + total_canaries; i++) {
 			mem[i] = 0;
@@ -119,44 +208,6 @@ protected:
 		if (tCheckCanaries() || tCheckHash()) {
 			tMemBroken();
 		}
-	}
-
-private:
-//!This function is not visible. It checks that memory is safe.
-	bool tCheckCanaries() {
-		bool result = 0;
-
-		for (int i = 0; i < total_canaries; i++) {
-			if (mem[i] != canary_value
-					|| mem[i + size * sizeof(T) + total_canaries]
-							!= canary_value) {
-				result = 1;
-			}
-		}
-
-		return result;
-	}
-//!This function checks that current function hash is equals to saved hash.
-//!This means that container is not broken.
-//!If something is not correct then tMemBroken() function is used.
-	bool tCheckHash() {
-		bool result = hash_value
-				!= hash(mem + total_canaries, size * sizeof(T));
-		return result;
-	}
-	void tRefillCanaries() {
-		for (unsigned i = 0; i < total_canaries; i++) {
-			mem[i + sizeof(T) * size + total_canaries] = canary_value;
-			mem[i] = canary_value;
-		}
-	}
-	void tMemBroken() {
-		std::cerr << "Memory broken through!\n";
-		assert(false);
-	}
-//!This function changes hash_value variable using hash function.
-	void tUpdateHash() {
-		hash_value = hash(mem + total_canaries, size * sizeof(T));
 	}
 
 };
