@@ -20,6 +20,8 @@ private:
 	using tContainer<T, size, (*hash)>::tGetFrom;
 public:
 	using tContainer<T, size, (*hash)>::tSeeBits;
+	using tContainer<T, size, (*hash)>::tForEach;
+	using tContainer<T, size, (*hash)>::operator [];
 	//!Inserts object on the top of this stack.
 	void tPush(const T &el) {
 		assert(total_objects + 1 != size);

@@ -26,6 +26,7 @@ int tDefaultHash(char *arg, const int sz) {
 //!Stack created by timattt
 //!It is armed with simple memory protection.
 template<typename T, int size, int (*hash)(char*, int) = tDefaultHash> class tContainer {
+
 private:
 	int hash_value;
 
@@ -35,8 +36,12 @@ private:
 		return p;
 	}
 public:
+	T operator[](std::size_t idx) {
+		return tGetFrom(idx);
+	}
 	//!This function return string that contains 1 and 0 everything from containers memory.
 	char* tSeeBits() {
+		tCheckAll();
 		char *res = (char*) calloc(
 				4 + 2 * (8 * size * sizeof(T) + 8 * 2 * total_canaries),
 				sizeof(char));
@@ -59,6 +64,7 @@ public:
 				tmp++;
 			}
 		}
+
 		return res;
 	}
 	//!This function writes element T to the given cell in containers memory.
@@ -83,7 +89,14 @@ public:
 		}
 		tUpdateHash();
 	}
-
+	//!This function can quickly pass all elements in this container. It can be overrided.
+	void tForEach(void (*consumer)(const T&)) {
+		assert(consumer != NULL);
+		tCheckAll();
+		for (int i = 0; i < size; i++) {
+			consumer(tGetFrom(i));
+		}
+	}
 	tContainer() :
 			hash_value(0) {
 		tUpdateHash();
@@ -91,14 +104,17 @@ public:
 		tCleanMemoryFromTo(0, size);
 	}
 protected:
+	//!Gives main start of this stack before canaries.
 	char* tGetBegin() {
 		tCheckAll();
 		return mem;
 	}
+	//!Gives main end of this stack after all canaries.
 	char* tGetEnd() {
 		tCheckAll();
 		return (mem + 2 * total_canaries + size * sizeof(T));
 	}
+	//!Checks all security.
 	void tCheckAll() {
 		if (tCheckCanaries() || tCheckHash()) {
 			tMemBroken();
@@ -106,7 +122,7 @@ protected:
 	}
 
 private:
-	//!This function is not visible. It checks that memory is safe.
+//!This function is not visible. It checks that memory is safe.
 	bool tCheckCanaries() {
 		bool result = 0;
 
@@ -120,9 +136,9 @@ private:
 
 		return result;
 	}
-	//!This function checks that current function hash is equals to saved hash.
-	//!This means that container is not broken.
-	//!If something is not correct then tMemBroken() function is used.
+//!This function checks that current function hash is equals to saved hash.
+//!This means that container is not broken.
+//!If something is not correct then tMemBroken() function is used.
 	bool tCheckHash() {
 		bool result = hash_value
 				!= hash(mem + total_canaries, size * sizeof(T));
@@ -138,7 +154,7 @@ private:
 		std::cerr << "Memory broken through!\n";
 		assert(false);
 	}
-	//!This function changes hash_value variable using hash function.
+//!This function changes hash_value variable using hash function.
 	void tUpdateHash() {
 		hash_value = hash(mem + total_canaries, size * sizeof(T));
 	}
