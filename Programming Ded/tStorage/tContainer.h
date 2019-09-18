@@ -84,8 +84,12 @@ private:
 
 public:
 	//! Invokes tGetFrom function.
-	T operator[](std::size_t idx) {
+	T& operator[](std::size_t idx) {
 		return tGetFrom(idx);
+	}
+	//! Operator ! cleans this container.
+	void operator! () {
+		tCleanMemoryFromTo(0, size);
 	}
 	//!This function returns very nice looking string that fully describes this containers memory.
 	char* tSeeBits() {
@@ -93,7 +97,7 @@ public:
 
 		int total_bytes = (total_canaries * 2 + size * sizeof(T) //Total bytes
 		) * 8 // Mul 8 to convert into bits
-		+ (1 + total_canaries) // Quantity of brakets to ensure that canaries look like this: |canary1||canary2|...|
+		+ (1 + total_canaries) // Quantity of brackets to ensure that canaries look like this: |canary1||canary2|...|
 		* 2 // We have 2 canary groups
 		+ (size + 1)  // Same as for canaries we make for every element
 				+ 1; // One char saved for end line symbol to make correct string.
@@ -101,7 +105,7 @@ public:
 		char *res = (char*) calloc(total_bytes, sizeof(char));
 		char *tmp = res;
 
-		//Mini function that place braket into tmp.
+		//Mini function that place bracket into tmp.
 		auto br = [](char *&tmp) {
 			*tmp = '|';
 			tmp++;
@@ -152,12 +156,12 @@ public:
 		tUpdateHash();
 	}
 	//!Returns object from given byte.
-	T tGetFrom_b(unsigned adress_b) {
+	T& tGetFrom_b(unsigned adress_b) {
 		tCheckAll();
 		assert(
 				adress_b >= 0
 						&& adress_b < size * sizeof(T) + 2 * total_canaries);
-		T res = (*(T*) (mem + adress_b));
+		T& res = (*(T*) (mem + adress_b));
 		return res;
 	}
 	//!This function writes element T to the given cell.
@@ -165,7 +169,7 @@ public:
 		tWriteTo_b(adress * sizeof(T) + total_canaries, el);
 	}
 	//!Returns object from given cell.
-	T tGetFrom(unsigned adress) {
+	T& tGetFrom(unsigned adress) {
 		return tGetFrom_b(adress * sizeof(T) + total_canaries);
 	}
 	//!This function cleans (places zeros) in this segment [a, b);

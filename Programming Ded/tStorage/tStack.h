@@ -19,7 +19,6 @@ private:
 	using tContainer<T, size, (*hash)>::tWriteTo;
 	using tContainer<T, size, (*hash)>::tGetFrom;
 public:
-
 	//!Inserts object on the top of this stack.
 	void tPush(const T &el) {
 		assert(total_objects != size);
@@ -55,6 +54,12 @@ public:
 	//! To make this stack beautiful. This thing just invokes tPush(el) function.
 	void operator<<(const T &el) {
 		tPush(el);
+	}
+
+	//! Cleans all stack.
+	void operator!() {
+		total_objects = 0;
+		tContainer<T, size, (*hash)>::operator !();
 	}
 
 	//!This is normal tSeeBitsFunction with one little difference.
