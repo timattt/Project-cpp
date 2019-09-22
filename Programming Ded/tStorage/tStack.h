@@ -20,6 +20,7 @@ private:
 	using tContainer<T, size, (*hash)>::tWriteTo_e;
 	using tContainer<T, size, (*hash)>::tGetFrom_e;
 public:
+	using tContainer<T, size, (*hash)>::tCopyTo;
 	//!Inserts object on the top of this stack.
 	void tPush(const T &el) {
 		assert(total_objects != size);

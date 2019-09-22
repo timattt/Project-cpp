@@ -20,7 +20,7 @@ unsigned tDefaultHash(char *arg, const unsigned sz) {
 		pow *= P;
 	}
 
-	return 0;
+	return result;
 }
 
 const unsigned default_parameters_quantity = sizeof(unsigned);
@@ -47,6 +47,7 @@ private:
 	void* operator new(size_t s, char *p) {
 		return p;
 	}
+
 	//!This function is not visible. It checks that memory is safe.
 	bool tCheckHash() {
 		bool result = tGetCurrentHash()
@@ -54,12 +55,16 @@ private:
 						size * sizeof(T));
 		return result;
 	}
-	void tMemBroken() {
-		std::cerr << "Memory broken through!\n";
-		assert(false);
+
+	void tError() {
+		std::cerr << "Something went wrong, printing tContainer\n";
+		std::cerr << tToString() << "\n";
+		std::cerr.flush();
+		exit(-200);
 	}
+
 	void tUpdateHash() {
-		tSetCurrentHash(hash(mem + total_canaries, size * sizeof(T)));
+		tSetCurrentHash(hash(mem + tGetElementAddress_b(0), size * sizeof(T)));
 	}
 
 	bool tCheckCanaries() {
@@ -108,19 +113,26 @@ private:
 	}
 	//!Writes char bits from [var] unsignedo [to].
 	void tWriteBits(char var, char *to) {
-		for (unsigned byte_i = 0; byte_i < size * 8; byte_i++) {
+		for (unsigned byte_i = 0; byte_i < 8; byte_i++) {
 			to[byte_i] = (char) (!!((var << byte_i) & 0x80)) + '0';
 		}
 	}
+
+	void tAssert(bool val) {
+		if (!val) {
+			tThrowException();
+		}
+	}
+
 	//!This function writes element T to the given byte in containers memory.
 	template<typename K = T> void tWriteTo_b(unsigned adress_b, const K &el) {
-		assert(adress_b >= 0 && adress_b < tTotalSize_b());
+		tAssert(adress_b >= 0 && adress_b < tTotalSize_b());
 		new (mem + adress_b) K(el);
 		tUpdateHash();
 	}
 	//!Returns object from given byte.
 	template<typename K = T> K& tGetFrom_b(unsigned adress_b) {
-		assert(adress_b >= 0 && adress_b < tTotalSize_b());
+		tAssert(adress_b >= 0 && adress_b < tTotalSize_b());
 		K &res = (*(K*) (mem + adress_b));
 		return res;
 	}
@@ -143,46 +155,26 @@ protected:
 	}
 
 	//!Gives total size in bytes of this container
-	unsigned tTotalSize_b() {
-		return 2 * total_canaries + size * sizeof(T) + tGetBytesForUtilities();
-	}
-
-	//! Return byte where this element is starting in the memory.
-	unsigned tGetElementAddress_b(unsigned number) {
-		return total_canaries + sizeof(T) * number + tGetBytesForUtilities();
-	}
-
-	//! Checks all security features.
-	void tCheckAll() {
-		if (tCheckCanaries() || tCheckHash()) {
-			tMemBroken();
-		}
-	}
-
-	//! Returns byte from where parameters starts.
-	unsigned tParameters_b() {
-		return total_canaries;
-	}
-
-	//! Returns byte from where ending canaries starts.
-	unsigned tEndingCanaries_b() {
-		return (total_canaries + size * sizeof(T) + tGetBytesForUtilities());
-	}
-
-public:
-	//!This function returns very nice looking string that fully describes this containers memory.
-	char* tSeeBits() {
-		tCheckAll();
+	const char* tSeeBits(unsigned *length = NULL) {
+		tCheckValid();
 
 		unsigned total_bytes = (tTotalSize_b() //Total bytes
 		) * 8                  // Mul 8 to convert unsignedo bits
 		+ (1 + total_canaries) // Quantity of brackets to ensure that canaries look like this: |canary1||canary2|...|
 		* 2                    // We have 2 canary groups
 		+ (size + 1)           // Same as for canaries we make for every element
-				+ 1; // One char saved for end line symbol to make correct string.
+				+ 1 // One char saved for end line symbol to make correct string.
+				+ 2;
 
-		char *res = (char*) calloc(total_bytes, sizeof(char));
-		char *tmp = res;
+		if (length != NULL) {
+			*length = total_bytes;
+		}
+
+		const char *res = (const char*) calloc(total_bytes, sizeof(char));
+		if (res == NULL) {
+			exit(-100);
+		}
+		char *tmp = (char*) res;
 
 		//Mini function that place bracket unsignedo tmp.
 		auto br = [](char *&tmp) {
@@ -198,6 +190,14 @@ public:
 			br(tmp);
 		}
 
+		// Utilities
+		br(tmp);
+		for (unsigned i = 0; i < tGetBytesForUtilities(); i++) {
+			tWriteBits(mem[tParameters_b() + i], tmp);
+			tmp += 8;
+		}
+		br(tmp);
+
 		// Bytes of data
 		br(tmp);
 		for (unsigned i = 0; i < size; i++) {
@@ -206,7 +206,6 @@ public:
 						mem[total_canaries + (i + 1) * sizeof(T) - 1 - byte_i],
 						tmp);
 				tmp += 8;
-
 			}
 			br(tmp);
 		}
@@ -214,7 +213,9 @@ public:
 		// Ending canaries
 		br(tmp);
 		for (unsigned i = 0; i < total_canaries; i++) {
-			tWriteBits(*(tEndingCanaries_p() + i), tmp);
+			tWriteBits(
+					mem[i + total_canaries + tGetBytesForUtilities()
+							+ size * sizeof(T)], tmp);
 			tmp += 8;
 			br(tmp);
 		}
@@ -224,21 +225,70 @@ public:
 
 		return res;
 	}
+	unsigned tTotalSize_b() {
+		return 2 * total_canaries + size * sizeof(T) + tGetBytesForUtilities();
+	}
+
+	//! Return byte where this element is starting in the memory.
+	unsigned tGetElementAddress_b(unsigned number) {
+		return total_canaries + sizeof(T) * number + tGetBytesForUtilities();
+	}
+
+	//! Just throws exception and tells some information about this class.
+	void tThrowException() {
+		throw "tStrongContainer broken! Printing info: "
+				+ (std::string) (tToString());
+	}
+
+	//! Checks all security features.
+	void tCheckValid() {
+		if (!tIsValid()) {
+			tThrowException();
+		}
+	}
+
+	//! Returns byte from where parameters starts.
+	unsigned tParameters_b() {
+		return total_canaries;
+	}
+
+	//! Returns byte from where ending canaries starts.
+	unsigned tEndingCanaries_b() {
+		return (total_canaries + size * sizeof(T) + tGetBytesForUtilities());
+	}
+
+public:
+	//!This function returns very nice looking string that fully describes this containers memory.
 	//!Returns byte address of object with given number.
 	//!This function writes element T to the given cell.
 	template<typename K = T> void tWriteTo_e(unsigned adress, const K &el) {
-		tCheckAll();
+		tCheckValid();
 		tWriteTo_b<K>(tGetElementAddress_b(adress), el);
 	}
+
+	bool tIsValid() {
+		return !(tCheckCanaries() || tCheckHash());
+	}
+
+	//!Gives base information about this stack.
+	const char* tToString() {
+		unsigned length = 0;
+		const char *bits = tSeeBits(&length);
+		const char *result = (char*) calloc(length + 16, sizeof(char));
+		strcpy((char*) result, "tContainer:bits:");
+		strcpy((char*) result + 16, bits);
+		return result;
+	}
+
 	//!Returns object from given cell.
 	template<typename K = T> K& tGetFrom_e(unsigned adress) {
-		tCheckAll();
+		tCheckValid();
 		return tGetFrom_b<K>(tGetElementAddress_b(adress));
 	}
 	//!This function cleans (places zeros) in this segment [a, b);
 	void tCleanMemoryFromTo_b(unsigned a, unsigned b) {
-		tCheckAll();
-		assert(a < b && b < tTotalSize_b());
+		tCheckValid();
+		tAssert(a < b && b <= size);
 		for (unsigned i = tGetElementAddress_b(a); i < tGetElementAddress_b(b);
 				i++) {
 			mem[i] = 0;
@@ -247,18 +297,23 @@ public:
 	}
 	//!This function can quickly pass all elements in this container. It can be overrided.
 	void tForEach(void (*consumer)(const T&)) {
-		assert(consumer != NULL);
-		tCheckAll();
+		tAssert(consumer != NULL);
+		tCheckValid();
 		for (unsigned i = 0; i < size; i++) {
 			consumer(tGetFrom_e(i));
+		}
+	}
+	void tCopyTo(tContainer<T, size> &to) {
+		tCheckValid();
+		for (unsigned i = 0; i < tTotalSize_b(); i++) {
+			to.mem[i] = this->mem[i];
 		}
 	}
 	tContainer() {
 		tUpdateHash();
 		tRefillCanaries();
-		tCleanMemoryFromTo_b(0, tTotalSize_b());
+		tCleanMemoryFromTo_b(0, size);
 	}
-	//!Checks all security.
 };
 
 }
