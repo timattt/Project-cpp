@@ -1,7 +1,7 @@
 #ifndef T_STACK
 #define T_STACK
 
-#include "tContainer.h"
+#include "tStrongContainer.h"
 
 namespace tStorage {
 
@@ -14,17 +14,17 @@ namespace tStorage {
 //!
 template<typename T, unsigned size, unsigned (*hash)(char*,
 		unsigned) = tDefaultHash>
-class tStack: private tContainer<T, size, (*hash)> {
+class tStack: private tStrongContainer<T, size, (*hash)> {
 private:
 	unsigned total_objects = 0;
-	using tContainer<T, size, (*hash)>::tWriteTo_e;
-	using tContainer<T, size, (*hash)>::tGetFrom_e;
+	using tStrongContainer<T, size, (*hash)>::tInsert;
+	using tStrongContainer<T, size, (*hash)>::tGet;
 public:
-	using tContainer<T, size, (*hash)>::tCopyTo;
+	using tStrongContainer<T, size, (*hash)>::tToString;
 	//!Inserts object on the top of this stack.
 	void tPush(const T &el) {
 		assert(total_objects != size);
-		tWriteTo_e(total_objects, el);
+		tInsert(el, total_objects);
 		total_objects++;
 	}
 
@@ -32,7 +32,7 @@ public:
 	T tPop() {
 		assert(total_objects != 0);
 		total_objects--;
-		T res = tGetFrom_e(total_objects);
+		T res = tGet(total_objects);
 		return res;
 	}
 
@@ -44,7 +44,7 @@ public:
 	//!Invokes consumer function for every element in this stack.
 	void tForEach(void (*consumer)(const T&)) {
 		for (int i = total_objects - 1; i != -1; i--) {
-			consumer(this->tGetFrom_e(i));
+			consumer(this->tGet(i));
 		}
 	}
 
@@ -56,31 +56,6 @@ public:
 	//! To make this stack beautiful. This thing just invokes tPush(el) function.
 	void operator<<(const T &el) {
 		tPush(el);
-	}
-
-	//! Cleans all stack.
-	void operator!() {
-		total_objects = 0;
-		tContainer<T, size, (*hash)>::operator !();
-	}
-
-	//!This is normal tSeeBitsFunction with one little difference.
-	//!After last object will be placed [*] instead of [|].
-	char* tSeeBits() {
-		char *res = tContainer<T, size, (*hash)>::tSeeBits();
-		unsigned mmsi = 1; // Main memory start index.
-		for (; res[mmsi - 1] != res[mmsi] || res[mmsi] != '|'; mmsi++)
-			;
-
-		for (unsigned i = 0; i < total_objects; i++, mmsi += sizeof(T) * 8 + 1)
-			//Plus one because | separates objects.
-			;
-
-		if (total_objects != size) { // Because I don't want to see such thing like this [*|]
-			res[mmsi] = '*';
-		}
-
-		return res;
 	}
 };
 }

@@ -21,8 +21,7 @@ private:
 
 	//! Just throws exception and tells some information about this class.
 	void tThrowException() {
-		throw "tStrongContainer broken! Printing info: "
-				+ (std::string) (tToString());
+		throw "tStrongContainer broken! Printing info: ";
 	}
 
 	//! Checks core to be valid. If not then tThrowException function is used.
