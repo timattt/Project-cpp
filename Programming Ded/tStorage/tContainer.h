@@ -2,6 +2,9 @@
 #define T_CONTAINER
 
 #include <bits/stdc++.h>
+#include "../tUtilities/tUtilities.h"
+
+using namespace tUtilities;
 
 namespace tStorage {
 
@@ -29,24 +32,19 @@ const unsigned default_parameters_quantity = sizeof(unsigned);
 //!It is armed with memory protection. Hash is always checked so every simple operation is escorted
 //!with invoking tCheckAll() function which is O(n).
 template<typename T, unsigned size, unsigned (*hash)(char*,
-		unsigned) = tDefaultHash, unsigned bfu = 0>
+		unsigned) = tDefaultHash, unsigned bytes_for_utilities = 0>
 class tContainer {
 
 private:
 
 	//!This function gives quantity of bytes for container fields.
 	unsigned tGetBytesForUtilities() {
-		return bfu + default_parameters_quantity;
+		return bytes_for_utilities + default_parameters_quantity;
 	}
 
 	//! Memory itself.
-	char mem[size * sizeof(T) + 2 * total_canaries + bfu
+	char mem[size * sizeof(T) + 2 * total_canaries + bytes_for_utilities
 			+ default_parameters_quantity];
-
-	//! Operator used for putting objects into byte array.
-	void* operator new(size_t s, char *p) {
-		return p;
-	}
 
 	//!This function is not visible. It checks that memory is safe.
 	bool tCheckHash() {
@@ -118,16 +116,10 @@ private:
 		}
 	}
 
-	void tAssert(bool val) {
-		if (!val) {
-			tThrowException();
-		}
-	}
-
 	//!This function writes element T to the given byte in containers memory.
 	template<typename K = T> void tWriteTo_b(unsigned adress_b, const K &el) {
 		tAssert(adress_b >= 0 && adress_b < tTotalSize_b());
-		new (mem + adress_b) K(el);
+		tWriteBytes(el, mem + adress_b);
 		tUpdateHash();
 	}
 	//!Returns object from given byte.
@@ -234,12 +226,6 @@ protected:
 		return total_canaries + sizeof(T) * number + tGetBytesForUtilities();
 	}
 
-	//! Just throws exception and tells some information about this class.
-	void tThrowException() {
-		throw "tStrongContainer broken! Printing info: "
-				+ (std::string) (tToString());
-	}
-
 	//! Checks all security features.
 	void tCheckValid() {
 		if (!tIsValid()) {
@@ -305,9 +291,7 @@ public:
 	}
 	void tCopyTo(tContainer<T, size> &to) {
 		tCheckValid();
-		for (unsigned i = 0; i < tTotalSize_b(); i++) {
-			to.mem[i] = this->mem[i];
-		}
+		tCopyBuffers(mem, to.mem, tTotalSize_b());
 	}
 	tContainer() {
 		tUpdateHash();

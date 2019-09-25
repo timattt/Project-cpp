@@ -23,14 +23,14 @@ public:
 	using tStrongContainer<T, size, (*hash)>::tToString;
 	//!Inserts object on the top of this stack.
 	void tPush(const T &el) {
-		assert(total_objects != size);
+		tAssert(total_objects != size);
 		tInsert(el, total_objects);
 		total_objects++;
 	}
 
 	//!Delete object from top.
 	T tPop() {
-		assert(total_objects != 0);
+		tAssert(total_objects != 0);
 		total_objects--;
 		T res = tGet(total_objects);
 		return res;
@@ -43,6 +43,7 @@ public:
 
 	//!Invokes consumer function for every element in this stack.
 	void tForEach(void (*consumer)(const T&)) {
+		tAssert(consumer != NULL);
 		for (int i = total_objects - 1; i != -1; i--) {
 			consumer(this->tGet(i));
 		}

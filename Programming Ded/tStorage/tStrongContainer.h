@@ -19,11 +19,6 @@ private:
 		}
 	}
 
-	//! Just throws exception and tells some information about this class.
-	void tThrowException() {
-		throw "tStrongContainer broken! Printing info: ";
-	}
-
 	//! Checks core to be valid. If not then tThrowException function is used.
 	void tCheckValid() {
 		if (!core.tIsValid()) {
@@ -44,8 +39,6 @@ private:
 			tThrowException();
 		}
 	}
-
-protected:
 
 public:
 	//! Gives information about this container.
