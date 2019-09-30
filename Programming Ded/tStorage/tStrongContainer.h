@@ -62,6 +62,7 @@ public:
 	const T& tGet(unsigned index) {
 		tAssert(index < size);
 		preSave();
+
 		const T &result = core.tGetFrom_e(index);
 		postSave();
 

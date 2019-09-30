@@ -247,9 +247,9 @@ public:
 	//!This function returns very nice looking string that fully describes this containers memory.
 	//!Returns byte address of object with given number.
 	//!This function writes element T to the given cell.
-	template<typename K = T> void tWriteTo_e(unsigned adress, const K &el) {
+	void tWriteTo_e(unsigned adress, const T &el) {
 		tCheckValid();
-		tWriteTo_b<K>(tGetElementAddress_b(adress), el);
+		tWriteTo_b<T>(tGetElementAddress_b(adress), el);
 	}
 
 	bool tIsValid() {
@@ -267,9 +267,9 @@ public:
 	}
 
 	//!Returns object from given cell.
-	template<typename K = T> K& tGetFrom_e(unsigned adress) {
+	T& tGetFrom_e(unsigned adress) {
 		tCheckValid();
-		return tGetFrom_b<K>(tGetElementAddress_b(adress));
+		return tGetFrom_b<T>(tGetElementAddress_b(adress));
 	}
 	//!This function cleans (places zeros) in this segment [a, b);
 	void tCleanMemoryFromTo_b(unsigned a, unsigned b) {

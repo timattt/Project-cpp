@@ -29,10 +29,10 @@ public:
 	}
 
 	//!Delete object from top.
-	T tPop() {
+	T &tPop() {
 		tAssert(total_objects != 0);
 		total_objects--;
-		T res = tGet(total_objects);
+		T & res = tGet(total_objects);
 		return res;
 	}
 
