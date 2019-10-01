@@ -44,8 +44,11 @@ public:
 	//! If length is initialized then uses only first [length] symbols.
 	//! If not then uses tStrlen() function.
 	void tWriteLine(const char *line, unsigned length = 0) {
-		unsigned len = (length == 0 ? tStrlen(line) : length);
-		if (line == NULL || mapped_buffer + sizeBytes < curr_map_byte + len) {
+		unsigned len = 0;
+		if (line == NULL
+				|| mapped_buffer + sizeBytes
+						< curr_map_byte
+								+ (len = (length == 0 ? tStrlen(line) : length))) {
 			tThrowException("Can not write line!");
 		}
 		tCopyBuffers(line, curr_map_byte, len);
@@ -54,6 +57,7 @@ public:
 		tWritec('\n');
 	}
 
+	//! Writes any symbol to current byte.
 	void tWritec(char c) {
 		if (curr_map_byte >= mapped_buffer + sizeBytes) {
 			tThrowException("No more space in file!");
@@ -62,6 +66,7 @@ public:
 		curr_map_byte++;
 	}
 
+	//! Cleares buffer.
 	void tClearBuffer() {
 		if (mapped_buffer == NULL) {
 			tThrowException("Not mapped!");
@@ -75,6 +80,10 @@ public:
 			name(name_), file_handle(INVALID_HANDLE_VALUE), file_mapping_handle(
 			INVALID_HANDLE_VALUE), mapped_buffer(NULL), curr_map_byte(NULL), sizeBytes(
 					0) {
+		if (name == NULL) {
+			tThrowException("Name is NULL!");
+		}
+
 		file_handle = CreateFileA(name, GENERIC_READ | GENERIC_WRITE,
 		FILE_SHARE_WRITE, NULL,
 		OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -85,6 +94,7 @@ public:
 
 	}
 
+	//! Returns mapped buffer.
 	char* tGetBuffer() {
 		if (mapped_buffer == NULL) {
 			tThrowException("File is not mapped!");
@@ -112,10 +122,18 @@ public:
 		return result;
 	}
 
+	char * tGetCurrentPointer() {
+		return curr_map_byte;
+	}
+
+	void tMovePointer(int dx) {
+		curr_map_byte += dx;
+	}
+
 	//! Starts file mapping. Use this before using tGetc(), tReadLine()...
 	//! sz - ensures that file at least have sz bytes.
 	//! If sz is zero then sizeBytes is initialized with tGetFileSize() function.
-	char* tStartMapping(int sz = 0) {
+	char* tStartMapping(unsigned sz = 0) {
 		tStopMapping();
 
 		file_mapping_handle = CreateFileMappingA(file_handle, NULL,

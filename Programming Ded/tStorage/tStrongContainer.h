@@ -59,11 +59,11 @@ public:
 	}
 
 	//! Gives element from given index.
-	const T& tGet(unsigned index) {
+	T& tGet(unsigned index) {
 		tAssert(index < size);
 		preSave();
 
-		const T &result = core.tGetFrom_e(index);
+		T &result = core.tGetFrom_e(index);
 		postSave();
 
 		return result;
