@@ -33,7 +33,36 @@ int tMin(int a, int b) {
 	return (a < b ? a : b);
 }
 
-template<typename T>bool tCompare(const T * a, const T * b, unsigned len) {
+void tParse(const char *text, unsigned text_length, const char *bad_symbols,
+		unsigned total_bad_symbols, void (*consumer)(char*, unsigned)) {
+
+	auto is_bad = [](char symb, const char *bad, unsigned total_bad_symbols) {
+		for (unsigned i = 0; i < total_bad_symbols; i++) {
+			if (symb == bad[i]) {
+				return 1;
+			}
+		}
+
+		return 0;
+	};
+
+	for (unsigned beg = 0, end = 0; beg < text_length;
+			beg++, end = std::max(end, beg)) {
+		if (is_bad(text[beg], bad_symbols, total_bad_symbols)) {
+			continue;
+		}
+
+		while (!is_bad(text[end], bad_symbols, total_bad_symbols)) {
+			end++;
+		}
+
+		consumer((char*) (text + beg), end - beg);
+		beg = end;
+	}
+
+}
+
+template<typename T> bool tCompare(const T *a, const T *b, unsigned len) {
 	for (unsigned i = 0; i < len; i++) {
 		if (a[i] != b[i]) {
 			return false;

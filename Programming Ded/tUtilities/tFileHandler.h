@@ -122,7 +122,7 @@ public:
 		return result;
 	}
 
-	char * tGetCurrentPointer() {
+	char* tGetCurrentPointer() {
 		return curr_map_byte;
 	}
 

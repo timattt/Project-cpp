@@ -1,5 +1,5 @@
-#ifndef T_PROCESSOR
-#define T_PROCESSOR
+#ifndef T_PROCESSOR_V1
+#define T_PROCESSOR_V1
 
 #include <bits/stdc++.h>
 #include "../tUtilities/tFileHandler.h"
@@ -13,8 +13,8 @@ using namespace tStorage;
 
 namespace tLanguageHandler {
 
-const unsigned stack_size = 10000;
-const unsigned total_registers = 3; //ax, bx, cx
+const unsigned Stack_size = 10000;
+const unsigned Total_registers = 3; //ax, bx, cx
 
 char tGetRegisterIndex(const char *args, unsigned len) {
 	if (args == NULL) {
@@ -35,13 +35,13 @@ char tGetRegisterIndex(const char *args, unsigned len) {
 
 struct tProcessor {
 	// Stack
-	tStack<int, stack_size> mem_stack;
+	tStack<int, Stack_size> mem_stack;
 
 	int *regs;
 
 	tProcessor() :
 			mem_stack( { }), regs(NULL) {
-		regs = (int*) calloc(total_registers, sizeof(int));
+		regs = (int*) calloc(Total_registers, sizeof(int));
 	}
 
 	~tProcessor() {
@@ -101,20 +101,23 @@ void tCompile(tFile *source, tFile *exe, tFuncLib *lib) {
 		tThrowException("Something went wrong!");
 	}
 
-	cout << "Compiling!\n";
-
-	source->tStartMapping();
-
 	unsigned line_length = 0;
 	char *line = NULL;
 
-	exe->tStartMapping(200);
-	exe->tClearBuffer();
+	char *exe_buf = (char*) calloc(200, sizeof(char));
+	unsigned buf_size = 0;
 
-	unsigned line_number = 1;
-
-	for (; source->tHasMoreSymbs(); line_number++) {
+	source->tStartMapping();
+	while (source->tHasMoreSymbs()) {
 		line = source->tReadLine(line_length);
+
+		if (line[0] == '/' && line[1] == '/') {
+			continue;
+		}
+
+		while (*line == ' ' || *line == '	') {
+			line++;
+		}
 
 		int id = -1;
 		unsigned arg_beg = 0;
@@ -128,30 +131,38 @@ void tCompile(tFile *source, tFile *exe, tFuncLib *lib) {
 		if (id == -1) {
 			tThrowException("Compilation error!");
 		}
-		exe->tWritec(id);
+		exe_buf[buf_size] = id;
+		buf_size++;
 
 		int args_len = line_length - arg_beg;
-		int address =
-				(args_len >= 2 ? tGetRegisterIndex(line + arg_beg, 2) : -1);
+		char address = (
+				args_len >= 2 ? tGetRegisterIndex(line + arg_beg, 2) : -1);
 
 		if (address != -1) {
-			exe->tWritec((char) address);
+			exe_buf[buf_size] = address;
+			buf_size++;
 		} else {
-			exe->tWritec((char) (args_len <= 0 ? 127 : 0));
+			exe_buf[buf_size] = ((char) (args_len <= 0 ? 127 : 0));
+			buf_size++;
+
 			if (args_len > 0) {
 				char tmp = *(line + line_length);
 				*(line + line_length) = '\0';
 				int value = std::atoi(line + arg_beg);
 				*(line + line_length) = tmp;
-				tWriteBytes<int>(value, exe->tGetCurrentPointer());
-				exe->tMovePointer(4);
+				tWriteBytes<int>(value, exe_buf);
+				buf_size++;
 			}
 		}
 
 	}
-
-	exe->tStopMapping();
 	source->tStopMapping();
+
+	exe->tStartMapping(buf_size);
+	tCopyBuffers((const char*) exe_buf, exe->tGetBuffer(), buf_size);
+	exe->tStopMapping();
+
+	delete exe_buf;
 }
 
 void tDecompile(tFile *exec, tFile *source, tFuncLib *lib) {
@@ -159,11 +170,10 @@ void tDecompile(tFile *exec, tFile *source, tFuncLib *lib) {
 }
 
 void tInvoke(tFile *exec, tFuncLib *lib) {
-	cout << "Invoking!\n";
-
+	tAssert(exec != NULL && lib != NULL);
 	tProcessor *processor = new tProcessor();
 
-	int buf[1];
+	int arg_buf[1];
 
 	exec->tStartMapping();
 	while (exec->tHasMoreSymbs()) {
@@ -179,9 +189,9 @@ void tInvoke(tFile *exec, tFuncLib *lib) {
 
 		// Arguments are 4 bytes after
 		if (arg_param == (char) 0) {
-			*buf = tConvertBytes<int>(exec->tGetCurrentPointer());
+			*arg_buf = tConvertBytes<int>(exec->tGetCurrentPointer());
 			exec->tMovePointer(4);
-			func(buf, processor);
+			func(arg_buf, processor);
 		}
 
 		// Argument is register
