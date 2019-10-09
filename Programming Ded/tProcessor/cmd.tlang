@@ -1,0 +1,22 @@
+#include "tStandartDefs.h"
+
+DEF(push, 40,  {
+		PUSH(ARG);
+})
+DEF(out, 41, {
+		NO_ARG(cout << POP << "\n")
+		HAVE_ARG(cout << ARG << "\n")
+})
+DEF(in, 42, {
+		HAVE_ARG(cin >> ARG)
+		NO_ARG(PROCESSOR_TYPE x = 0; cin >> x; PUSH(x))
+})
+DEF(pop, 43, {
+		HAVE_ARG(ARG = POP)
+		NO_ARG(POP)
+})
+DEF(add, 44, {
+		PUSH(POP + POP)
+})
+
+#include "tStandartUndefs.h"

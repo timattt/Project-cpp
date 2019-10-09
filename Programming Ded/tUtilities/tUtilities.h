@@ -33,8 +33,12 @@ int tMin(int a, int b) {
 	return (a < b ? a : b);
 }
 
-void tParse(const char *text, unsigned text_length, const char *bad_symbols,
-		unsigned total_bad_symbols, void (*consumer)(char*, unsigned)) {
+char** tParse(const char *text, unsigned text_length, const char *bad_symbols,
+		unsigned total_bad_symbols, unsigned &total) {
+
+	char **result = (char**) calloc(text_length, sizeof(char*));
+
+	unsigned total_ = 0;
 
 	auto is_bad = [](char symb, const char *bad, unsigned total_bad_symbols) {
 		for (unsigned i = 0; i < total_bad_symbols; i++) {
@@ -48,18 +52,25 @@ void tParse(const char *text, unsigned text_length, const char *bad_symbols,
 
 	for (unsigned beg = 0, end = 0; beg < text_length;
 			beg++, end = std::max(end, beg)) {
+
 		if (is_bad(text[beg], bad_symbols, total_bad_symbols)) {
 			continue;
 		}
 
-		while (!is_bad(text[end], bad_symbols, total_bad_symbols)) {
+		while (end < text_length && !is_bad(text[end], bad_symbols, total_bad_symbols)) {
 			end++;
 		}
 
-		consumer((char*) (text + beg), end - beg);
+		result[total_] = (char*) calloc(end - beg, sizeof(char));
+		tCopyBuffers(text + beg, result[total_], end - beg);
+		total_++;
 		beg = end;
+
 	}
 
+	std::realloc(result, total_);
+	total = total_;
+	return result;
 }
 
 template<typename T> bool tCompare(const T *a, const T *b, unsigned len) {
@@ -82,7 +93,10 @@ void tAssert(bool val) {
 //!Compares two strings if variable size is initialized then comparation will be done size times.
 //!Else comparation is continue until one string reachs its end.
 int tStrcmp(const char *str1, const char *str2, int size = 0) {
-	tAssert(str1 != NULL && str2 != NULL);
+	if (str1 == NULL || str2 == NULL) {
+		tThrowException("Something is null!");
+	}
+
 	if (size < 0) {
 		size = tMin(tStrlen(str1), tStrlen(str2));
 	}
@@ -116,7 +130,9 @@ void tThrowException(const char *message = "tException") {
 
 //! Copies one buffer to another.
 template<typename T> void tCopyBuffers(const T *from, T *to, unsigned length) {
-	tAssert(from != NULL && to != NULL);
+	if (from == NULL || to == NULL) {
+		tThrowException("Something is NULL!");
+	}
 	for (unsigned i = 0; i < length; i++) {
 		to[i] = from[i];
 	}
@@ -149,7 +165,9 @@ int tGetFileSize(const char *name) {
 
 //!Gives quantity of chars in this char array.
 int tStrlen(const char *str) {
-	tAssert(str != NULL);
+	if (str == NULL) {
+		tThrowException("Line is NULL!");
+	}
 	const char *s = str;
 	for (; *s; s++)
 		;

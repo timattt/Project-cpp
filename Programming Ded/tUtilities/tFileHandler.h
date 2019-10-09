@@ -107,6 +107,11 @@ public:
 		curr_map_byte = mapped_buffer;
 	}
 
+	//! Deletes everything from this file.
+	void tClear() {
+
+	}
+
 	//! Returns next char in file.
 	char tGetc() {
 		if (mapped_buffer == NULL) {
