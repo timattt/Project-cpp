@@ -4,10 +4,10 @@
 #include <bits/stdc++.h>
 #include "../tStorage/tStack.h"
 
+namespace tLanguageHandlerUtilities {
+
 using namespace std;
 using namespace tStorage;
-
-namespace tLanguageHandlerUtilities {
 
 typedef int PROCESSOR_TYPE;
 
@@ -15,20 +15,24 @@ const unsigned Stack_size = 10000;
 const unsigned Total_registers = 3; //ax, bx, cx
 
 char tGetRegisterIndex(const char *args, unsigned len) {
-	if (args == NULL) {
+	if (args == NULL || len < 2) {
 		tThrowException("Arguments are NULL!");
 	}
-	if (tCompare<char>(args, "ax", 2)) {
-		return 1;
-	}
-	if (tCompare<char>(args, "bx", 2)) {
-		return 2;
-	}
-	if (tCompare<char>(args, "cx", 2)) {
-		return 3;
+
+	char s1 = args[0];
+	char s2 = args[1];
+
+	if (s2 != 'x') {
+		return -1;
 	}
 
-	return -1;
+	char index = (s1 - 'a' + 1);
+
+	if (index < 1 || (unsigned)index > Total_registers) {
+		return -1;
+	}
+
+	return index;
 }
 
 struct tProcessor {

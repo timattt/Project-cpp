@@ -2,13 +2,8 @@
 #define T_LANGUAGE_HANDLER_V2
 
 #include "tLanguageHandlerUtilities.h"
-#include "../tUtilities/tUtilities.h"
 #include "../tUtilities/tFileHandler.h"
 
-#include "bits/stdc++.h"
-
-using namespace std;
-using namespace tUtilities;
 using namespace tFileHandler;
 using namespace tLanguageHandlerUtilities;
 
@@ -25,7 +20,7 @@ void tCompile(tFile *source, tFile *exe) {
 	char parse_symbols[2] = { ' ', '	' };
 
 	source->tStartMapping();
-	exe->tStartMapping(200);
+	exe->tStartMapping(tGetFileSize(source->tGetName()));
 	while (source->tHasMoreSymbs()) {
 		line = source->tReadLine(line_length);
 
@@ -45,7 +40,9 @@ void tCompile(tFile *source, tFile *exe) {
 		int id = -1;
 
 #define DEF(NAME, ID, CODE) if (!tStrcmp(divs[0], #NAME, tStrlen(divs[0]))) {id = ID;}
+#include "tStandartDefs.h"
 #include "cmd.tlang"
+#include "tStandartUndefs.h"
 #undef DEF
 
 		if (id == -1) {
@@ -79,6 +76,9 @@ void tCompile(tFile *source, tFile *exe) {
 
 		delete divs;
 	}
+
+	exe->tWritec((char)0);
+
 	source->tStopMapping();
 	exe->tStopMapping();
 
@@ -96,12 +96,16 @@ void tInvoke(tFile *exec) {
 	while (exec->tHasMoreSymbs()) {
 		char id = exec->tGetc();
 
+		if (id == (char)0) {
+			break;
+		}
+
 		tProcFunction func = NULL;
 
 #define DEF(NAME, ID, CODE) if (id == ID) func = [](PROCESSOR_TYPE*arg, tProcessor*proc) CODE;
-
+#include "tStandartDefs.h"
 #include "cmd.tlang"
-
+#include "tStandartUndefs.h"
 #undef DEF
 
 		if (func == NULL) {
@@ -131,7 +135,6 @@ void tInvoke(tFile *exec) {
 	exec->tStopMapping();
 
 	delete processor;
-
 }
 
 }

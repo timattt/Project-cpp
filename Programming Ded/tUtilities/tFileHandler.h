@@ -40,6 +40,10 @@ class tFile {
 
 public:
 
+	const char * tGetName() {
+		return name;
+	}
+
 	//! Writes given line.
 	//! If length is initialized then uses only first [length] symbols.
 	//! If not then uses tStrlen() function.
@@ -105,11 +109,6 @@ public:
 	//! Returns pointer in file to start position.
 	void tFlip() {
 		curr_map_byte = mapped_buffer;
-	}
-
-	//! Deletes everything from this file.
-	void tClear() {
-
 	}
 
 	//! Returns next char in file.

@@ -1,5 +1,3 @@
-#include "tStandartDefs.h"
-
 DEF(push, 40,  {
 		PUSH(ARG);
 })
@@ -16,7 +14,14 @@ DEF(pop, 43, {
 		NO_ARG(POP)
 })
 DEF(add, 44, {
-		PUSH(POP + POP)
+		HAVE_ARG(ARG = POP + POP)
+		NO_ARG(PUSH(POP + POP))
 })
-
-#include "tStandartUndefs.h"
+DEF(mul, 45, {
+		HAVE_ARG(ARG = POP * POP)
+		NO_ARG(PUSH(POP * POP))
+})
+DEF(div, 46, {
+		HAVE_ARG(ARG = POP / POP)
+		NO_ARG(PUSH(POP / POP))
+})
