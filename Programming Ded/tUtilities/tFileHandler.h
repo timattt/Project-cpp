@@ -123,6 +123,7 @@ public:
 		char result = *curr_map_byte;
 		curr_map_byte++;
 
+		//std::cout << "new symbol: " << (int)(result) << "\n";
 		return result;
 	}
 

@@ -57,18 +57,19 @@ char** tParse(const char *text, unsigned text_length, const char *bad_symbols,
 			continue;
 		}
 
-		while (end < text_length && !is_bad(text[end], bad_symbols, total_bad_symbols)) {
+		while (end < text_length
+				&& !is_bad(text[end], bad_symbols, total_bad_symbols)) {
 			end++;
 		}
 
 		result[total_] = (char*) calloc(end - beg, sizeof(char));
 		tCopyBuffers(text + beg, result[total_], end - beg);
+
 		total_++;
 		beg = end;
 
 	}
 
-	std::realloc(result, total_);
 	total = total_;
 	return result;
 }

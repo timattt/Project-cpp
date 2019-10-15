@@ -6,13 +6,21 @@
 
 namespace tLanguageHandlerUtilities {
 
-using namespace std;
+// STD FUNCTIONS
+//!!!
+using std::map;
+using std::string;
+using std::cout;
+using std::cin;
+//!!!
+
 using namespace tStorage;
 
-typedef int PROCESSOR_TYPE;
+typedef float PROCESSOR_TYPE;
 
 const unsigned Stack_size = 10000;
-const unsigned Total_registers = 3; //ax, bx, cx
+const unsigned Total_registers = 5; //ax, bx, cx
+const unsigned Max_arguments = 10;
 
 char tGetRegisterIndex(const char *args, unsigned len) {
 	if (args == NULL || len < 2) {
@@ -28,7 +36,7 @@ char tGetRegisterIndex(const char *args, unsigned len) {
 
 	char index = (s1 - 'a' + 1);
 
-	if (index < 1 || (unsigned)index > Total_registers) {
+	if (index < 1 || (unsigned) index > Total_registers) {
 		return -1;
 	}
 
@@ -43,7 +51,7 @@ struct tProcessor {
 
 	tProcessor() :
 			mem_stack( { }), regs(NULL) {
-		regs = (int*) calloc(Total_registers, sizeof(int));
+		regs = (PROCESSOR_TYPE*) calloc(Total_registers, sizeof(int));
 	}
 
 	~tProcessor() {
@@ -52,7 +60,7 @@ struct tProcessor {
 
 };
 
-typedef void (*tProcFunction)(PROCESSOR_TYPE*, tProcessor*);
+typedef void (*tProcFunction)(PROCESSOR_TYPE**, unsigned, tProcessor*);
 
 class tFuncLib {
 

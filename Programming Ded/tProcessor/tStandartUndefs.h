@@ -1,6 +1,12 @@
 #undef STK
 #undef PUSH
 #undef POP
-#undef ARG
-#undef HAVE_ARG
-#undef NO_ARG
+#undef ARG1
+#undef ARG2
+#undef ARG3
+#undef HAVE_ARGS
+#undef NO_ARGS
+#undef HAVE_ONE_ARG
+#undef HAVE_TWO_ARGS
+#undef HAVE_THREE_ARGS
+#undef FOR_EACH_ARG

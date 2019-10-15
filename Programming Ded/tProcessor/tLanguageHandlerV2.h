@@ -17,16 +17,16 @@ void tCompile(tFile *source, tFile *exe) {
 	unsigned line_length = 0;
 	char *line = NULL;
 
-	char parse_symbols[2] = { ' ', '	' };
+	char parse_symbols[1] = { ' ' };
 
 	source->tStartMapping();
-	exe->tStartMapping(tGetFileSize(source->tGetName()));
+	exe->tStartMapping(2 * tGetFileSize(source->tGetName()));
 	while (source->tHasMoreSymbs()) {
 		line = source->tReadLine(line_length);
 
 		unsigned total_divs = 0;
 
-		char **divs = tParse(line, line_length, parse_symbols, 2, total_divs);
+		char **divs = tParse(line, line_length, parse_symbols, 1, total_divs);
 
 		if (total_divs < 1) {
 			continue;
@@ -36,48 +36,52 @@ void tCompile(tFile *source, tFile *exe) {
 			delete divs;
 			continue;
 		}
-
 		int id = -1;
 
-#define DEF(NAME, ID, CODE) if (!tStrcmp(divs[0], #NAME, tStrlen(divs[0]))) {id = ID;}
+#define T_PROC_FUNC(NAME, ID, CODE) if (!tStrcmp(divs[0], #NAME, tStrlen(#NAME))) {id = ID;}
 #include "tStandartDefs.h"
 #include "cmd.tlang"
 #include "tStandartUndefs.h"
-#undef DEF
+#undef T_PROC_FUNC
 
-		if (id == -1) {
+		if (id == -1 || total_divs - 1 > Max_arguments) {
 			delete divs;
 			tThrowException("Compilation error!");
 		}
 
+		// Writing id of this command
 		exe->tWritec(id);
 
-		char address = (
-				(total_divs >= 2 && tStrlen(divs[1]) > 1) ?
-						tGetRegisterIndex(divs[1], 2) : -1);
+		// Writing quantity of parameters
+		exe->tWritec((char) (total_divs - 1));
 
-		if (address != -1) {
-			exe->tWritec(address);
-		} else {
-			exe->tWritec((char) (total_divs >= 2 ? 0 : 127));
+		for (unsigned i = 1; i < total_divs; i++) {
 
-			if (total_divs >= 2) {
+			char address = (
+					(tStrlen(divs[i]) > 1) ? tGetRegisterIndex(divs[i], 2) : -1);
+
+			if (address != -1) {
+				exe->tWritec(address);
+			} else {
+				exe->tWritec((char) (0));
+
 				PROCESSOR_TYPE value = 0;
 				if (typeid(PROCESSOR_TYPE) == typeid(int)) {
-					value = std::atoi(divs[1]);
+					value = std::atoi(divs[i]);
 				}
-				if (typeid(PROCESSOR_TYPE) == typeid(int)) {
-					value = std::atof(divs[1]);
+				if (typeid(PROCESSOR_TYPE) == typeid(float)) {
+					value = std::atof(divs[i]);
 				}
-				tWriteBytes<PROCESSOR_TYPE>(value, exe->tGetBuffer());
+				tWriteBytes<PROCESSOR_TYPE>(value, exe->tGetCurrentPointer());
 				exe->tMovePointer(4);
-			}
-		}
 
+			}
+
+		}
 		delete divs;
 	}
 
-	exe->tWritec((char)0);
+	exe->tWritec((char) 0);
 
 	source->tStopMapping();
 	exe->tStopMapping();
@@ -85,52 +89,52 @@ void tCompile(tFile *source, tFile *exe) {
 }
 
 void tInvoke(tFile *exec) {
-
 	tAssert(exec != NULL);
 
 	tProcessor *processor = new tProcessor();
 
-	PROCESSOR_TYPE arg_buf[1];
+	PROCESSOR_TYPE *arg_buf[Max_arguments];
+	PROCESSOR_TYPE constant_pointers[Max_arguments];
 
 	exec->tStartMapping();
 	while (exec->tHasMoreSymbs()) {
 		char id = exec->tGetc();
 
-		if (id == (char)0) {
-			break;
-		}
-
 		tProcFunction func = NULL;
 
-#define DEF(NAME, ID, CODE) if (id == ID) func = [](PROCESSOR_TYPE*arg, tProcessor*proc) CODE;
+#define T_PROC_FUNC(NAME, ID, CODE) if (id == ID) func = [](PROCESSOR_TYPE**args, unsigned totalArgs, tProcessor*proc) CODE;
 #include "tStandartDefs.h"
 #include "cmd.tlang"
 #include "tStandartUndefs.h"
-#undef DEF
+#undef T_PROC_FUNC
 
 		if (func == NULL) {
 			continue;
 		}
 
-		char arg_param = exec->tGetc();
+		unsigned total_args = (unsigned) (exec->tGetc());
 
-		// Arguments are 4 bytes after
-		if (arg_param == (char) 0) {
-			*arg_buf = tConvertBytes<PROCESSOR_TYPE>(exec->tGetCurrentPointer());
-			exec->tMovePointer(4);
-			func(arg_buf, processor);
+		for (unsigned i = 0; i < total_args; i++) {
+			char arg_param = exec->tGetc();
+
+			PROCESSOR_TYPE *arg_p = NULL;
+
+			// Arguments are 4 bytes after
+			if (arg_param == (char) 0) {
+				constant_pointers[i] = tConvertBytes<PROCESSOR_TYPE>(
+						exec->tGetCurrentPointer());
+				exec->tMovePointer(4);
+
+				arg_p = &constant_pointers[i];
+			}
+			// Argument is register
+			else {
+				arg_p = &(processor->regs[(unsigned) arg_param]);
+			}
+			*(arg_buf + i) = arg_p;
 		}
 
-		// Argument is register
-		if (arg_param > 0 && arg_param < (char) 127) {
-			func(&processor->regs[(unsigned) arg_param], processor);
-		}
-
-		// No arguments
-		if (arg_param == (char) 127) {
-			func(NULL, processor);
-		}
-
+		func(arg_buf, total_args, processor);
 	}
 	exec->tStopMapping();
 

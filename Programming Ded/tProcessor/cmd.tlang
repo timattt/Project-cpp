@@ -1,27 +1,81 @@
-DEF(push, 40,  {
-		PUSH(ARG);
+T_PROC_FUNC(push, 40,  {
+		PUSH(ARG1);
 })
-DEF(out, 41, {
-		NO_ARG(cout << POP << "\n")
-		HAVE_ARG(cout << ARG << "\n")
+T_PROC_FUNC(out, 41, {
+		NO_ARGS(cout << POP << "\n")
+		HAVE_ARGS(cout << ARG1 << "\n")
 })
-DEF(in, 42, {
-		HAVE_ARG(cin >> ARG)
-		NO_ARG(PROCESSOR_TYPE x = 0; cin >> x; PUSH(x))
+T_PROC_FUNC(in, 42, {
+		HAVE_ARGS(cin >> ARG1)
+		NO_ARGS(PROCESSOR_TYPE x = 0; cin >> x; PUSH(x))
 })
-DEF(pop, 43, {
-		HAVE_ARG(ARG = POP)
-		NO_ARG(POP)
+T_PROC_FUNC(pop, 43, {
+		HAVE_ARGS(ARG1 = POP)
+		NO_ARGS(POP)
 })
-DEF(add, 44, {
-		HAVE_ARG(ARG = POP + POP)
-		NO_ARG(PUSH(POP + POP))
+T_PROC_FUNC(add, 44, {
+		HAVE_ARGS
+		(
+			PROCESSOR_TYPE RESULT = 0;
+			ARG_LAST = 0;
+			FOR_EACH_ARG
+			(
+				RESULT += ARG
+			)
+			ARG_LAST = RESULT;
+		)
+		NO_ARGS(PUSH(POP + POP))
 })
-DEF(mul, 45, {
-		HAVE_ARG(ARG = POP * POP)
-		NO_ARG(PUSH(POP * POP))
+T_PROC_FUNC(mul, 45, {
+		HAVE_ARGS
+		(
+			PROCESSOR_TYPE RESULT = 1;
+			ARG_LAST = 1;
+			FOR_EACH_ARG
+			(
+				RESULT *= ARG
+			)
+			ARG_LAST = RESULT;
+		)
+		NO_ARGS(PUSH(POP * POP))
 })
-DEF(div, 46, {
-		HAVE_ARG(ARG = POP / POP)
-		NO_ARG(PUSH(POP / POP))
+T_PROC_FUNC(sqrt, 46, {
+		HAVE_TWO_ARGS
+		(
+			ARG2 = std::sqrt(ARG1)
+		)
+		NO_ARGS
+		(
+			PUSH(std::sqrt(POP))
+		)
+})
+T_PROC_FUNC(neg, 47, {
+		NO_ARGS
+		(
+			PUSH(-POP)
+		)
+		HAVE_ARGS
+		(
+			FOR_EACH_ARG
+			(
+				ARG = -ARG
+			)
+		)
+})
+T_PROC_FUNC(div, 48, {
+		NO_ARGS
+		(
+			PROCESSOR_TYPE a = POP;
+			PROCESSOR_TYPE b = POP;
+			
+			PUSH(b / a);
+		)
+		HAVE_TWO_ARGS
+		(
+			PUSH(ARG1 / ARG2)
+		)
+		HAVE_THREE_ARGS
+		(
+			ARG3 = ARG1 / ARG2
+		)
 })

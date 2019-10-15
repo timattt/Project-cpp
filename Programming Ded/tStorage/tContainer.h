@@ -1,7 +1,6 @@
 #ifndef T_CONTAINER
 #define T_CONTAINER
 
-#include <bits/stdc++.h>
 #include "../tUtilities/tUtilities.h"
 
 using namespace tUtilities;
