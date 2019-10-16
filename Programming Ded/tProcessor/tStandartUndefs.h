@@ -10,3 +10,11 @@
 #undef HAVE_TWO_ARGS
 #undef HAVE_THREE_ARGS
 #undef FOR_EACH_ARG
+#undef JMP
+#undef BP
+#undef INV_ERROR
+#undef RAM
+#undef IF
+#undef THEN
+#undef ELSE
+#undef BYTE_IND

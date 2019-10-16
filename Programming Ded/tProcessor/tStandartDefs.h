@@ -21,3 +21,27 @@
 
 // For each argument
 #define FOR_EACH_ARG(CODE) for (unsigned i = 0; i < totalArgs; i++) { PROCESSOR_TYPE & ARG = **(args + i); CODE;}
+
+// GOTO
+#define JMP(A) proc->tMoveExeCarriage( (unsigned) A);
+
+// Registers
+#define BP proc->regs[0]
+#define AX proc->regs[0]
+#define BX proc->regs[0]
+#define CX proc->regs[0]
+#define DX proc->regs[0]
+
+// Error
+#define INV_ERROR tThrowException("Invokation error!");
+
+// RAM
+#define RAM(A) proc->ram[A]
+
+// If statement
+#define IF(A) if (A)
+#define THEN(A) {A;}
+#define ELSE(A) {A;}
+
+// Type
+#define BYTE_IND unsigned

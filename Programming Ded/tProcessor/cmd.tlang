@@ -1,81 +1,171 @@
-T_PROC_FUNC(push, 40,  {
-		PUSH(ARG1);
-})
+// One arg: pushes value of this arg into stack.
+// Two args: pushes value of the second arg into first arg.
+T_PROC_FUNC(push, 40, {
+			HAVE_ONE_ARG(PUSH(ARG1))
+		})
+		
+// No args: Pops value from stack and prints it.
+// Have args: Prints them all.
 T_PROC_FUNC(out, 41, {
-		NO_ARGS(cout << POP << "\n")
-		HAVE_ARGS(cout << ARG1 << "\n")
-})
+			NO_ARGS(cout << POP << "\n")
+			HAVE_ARGS
+			(
+				FOR_EACH_ARG
+				(
+					cout << ARG << "\n";
+				)
+			)
+		})
+// No args: Pushes value readen from console.
+// Have args: Reads values from screen and stores them in given args.
 T_PROC_FUNC(in, 42, {
-		HAVE_ARGS(cin >> ARG1)
-		NO_ARGS(PROCESSOR_TYPE x = 0; cin >> x; PUSH(x))
-})
+			NO_ARGS(PROCESSOR_TYPE x = 0; cin >> x; PUSH(x))
+			HAVE_ARGS
+			(
+				FOR_EACH_ARG
+				(
+					cin >> ARG;
+				)
+			)
+		})
+// No args: Pops one element 
+// Have args: Pops values from stack into given arguments.
 T_PROC_FUNC(pop, 43, {
-		HAVE_ARGS(ARG1 = POP)
 		NO_ARGS(POP)
-})
-T_PROC_FUNC(add, 44, {
 		HAVE_ARGS
 		(
-			PROCESSOR_TYPE RESULT = 0;
-			ARG_LAST = 0;
 			FOR_EACH_ARG
 			(
-				RESULT += ARG
+				ARG = POP;
 			)
-			ARG_LAST = RESULT;
 		)
-		NO_ARGS(PUSH(POP + POP))
-})
+	})
+// No args: Pops two values from stack and pushes their sum.
+// Have args: Sums all arguments and pushes result into stack.
+T_PROC_FUNC(add, 44, {
+			HAVE_ARGS
+			(
+					PROCESSOR_TYPE RESULT = 0;
+					FOR_EACH_ARG
+					(
+							RESULT += ARG
+					)
+					PUSH(RESULT);
+			)
+			NO_ARGS(PUSH(POP + POP))
+		})
+// No args: Pops two values from stack and pushes their sum.
+// Have args: Multiplies all arguments and pushes result into stack.
 T_PROC_FUNC(mul, 45, {
 		HAVE_ARGS
 		(
-			PROCESSOR_TYPE RESULT = 1;
-			ARG_LAST = 1;
-			FOR_EACH_ARG
-			(
-				RESULT *= ARG
-			)
-			ARG_LAST = RESULT;
+				PROCESSOR_TYPE RESULT = 1;
+				FOR_EACH_ARG
+				(
+						RESULT *= ARG
+				)
+				PUSH(RESULT);
 		)
 		NO_ARGS(PUSH(POP * POP))
-})
+	})
+// No args: pops from stack value and pushes into stack its square root.
+// One arg: pushes into stack sqrt of this argument.
 T_PROC_FUNC(sqrt, 46, {
-		HAVE_TWO_ARGS
-		(
-			ARG2 = std::sqrt(ARG1)
-		)
-		NO_ARGS
-		(
-			PUSH(std::sqrt(POP))
-		)
-})
-T_PROC_FUNC(neg, 47, {
-		NO_ARGS
-		(
-			PUSH(-POP)
-		)
-		HAVE_ARGS
-		(
-			FOR_EACH_ARG
+			HAVE_ONE_ARG
 			(
-				ARG = -ARG
+					PUSH(std::sqrt(ARG1))
 			)
-		)
-})
+			NO_ARGS
+			(
+					PUSH(std::sqrt(POP))
+			)
+		})
+// No args: pops value and pushes its negated value.
+// One arg: pushes negated value of argument.
+T_PROC_FUNC(neg, 47, {
+			HAVE_ONE_ARG
+			(
+					PUSH(-ARG1)
+			)
+			NO_ARGS
+			(
+				PUSH(-POP)
+			)
+		})
+// No args: pops two values a1, a2 and pushes (a2 / a1)
+// Two args: pushes ARG1 / ARG2
 T_PROC_FUNC(div, 48, {
-		NO_ARGS
-		(
+			NO_ARGS
+			(
+					PROCESSOR_TYPE a = POP;
+					PROCESSOR_TYPE b = POP;
+
+					PUSH(b / a);
+			)
+			HAVE_TWO_ARGS
+			(
+					PUSH(ARG1 / ARG2)
+			)
+		})
+// One arg: Moves processor carriage to given byte.		
+T_PROC_FUNC(jmp, 49, {
+			JMP(ARG1)
+		})
+// One arg: Pops two values from stack and if they are equal then jumps to given byte.
+// If argument quantity is not 1 then exception will be throwen.
+T_PROC_FUNC(je, 50, {
+			IF (TOTAL_ARGS != 1) THEN (
+				INV_ERROR
+			)
+			IF (POP == POP) THEN (
+				JMP(ARG1)
+			)
+		})
+// One arg: Pops two values from stack and if they are not equal then jumps to given byte.
+// If argument quantity is not 1 then exception will be throwen.
+T_PROC_FUNC(jne, 51, {
+			IF(TOTAL_ARGS != 1) THEN
+			(
+				INV_ERROR
+			)
 			PROCESSOR_TYPE a = POP;
 			PROCESSOR_TYPE b = POP;
+			IF (a != b) THEN (
+				JMP(ARG1)
+			)
+		})
+// One arg: calls target with location given in the parameter. Saves stacktrace.	
+// If argument quantity is not 1 then exception will be throwen.
+T_PROC_FUNC(call, 52, {
+			IF (TOTAL_ARGS != 1) THEN (
+				INV_ERROR
+			)
+			BYTE_IND return_point = proc->exeFile->tGetCurrentByte();
+			BYTE_IND old_bp = BP;
+			BP += 2;
 			
-			PUSH(b / a);
-		)
-		HAVE_TWO_ARGS
-		(
-			PUSH(ARG1 / ARG2)
-		)
-		HAVE_THREE_ARGS
-		(
-			ARG3 = ARG1 / ARG2
-		)
+			RAM((BYTE_IND)BP - 1) = return_point;
+			RAM((BYTE_IND)BP - 2) = old_bp;
+			
+			JMP(ARG1)
+})
+// No args: Returns to line after call function was used.
+// If argument quantity is not 0 then exception will be throwen.
+T_PROC_FUNC(ret, 53, {
+			IF (TOTAL_ARGS != 0) THEN (
+				INV_ERROR
+			)
+			BYTE_IND return_point = RAM((BYTE_IND)BP - 1);
+			BYTE_IND old_bp = RAM ((BYTE_IND)BP - 2);
+			
+			JMP(return_point);
+			BP = old_bp;
+})
+// No args: Moves carriage to the end of the program.
+// If argument quantity is not 0 then exception will be throwen.
+T_PROC_FUNC(end., 54, {
+			IF (TOTAL_ARGS != 0) THEN (
+				INV_ERROR
+			)
+			JMP(proc->exeFile->tGetSize())
 })

@@ -93,7 +93,7 @@ void tAssert(bool val) {
 
 //!Compares two strings if variable size is initialized then comparation will be done size times.
 //!Else comparation is continue until one string reachs its end.
-int tStrcmp(const char *str1, const char *str2, int size = 0) {
+int tStrcmp(const char *str1, const char *str2, int size = -1) {
 	if (str1 == NULL || str2 == NULL) {
 		tThrowException("Something is null!");
 	}

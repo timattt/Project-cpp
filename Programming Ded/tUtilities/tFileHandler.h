@@ -98,6 +98,10 @@ public:
 
 	}
 
+	unsigned tGetSize() {
+		return sizeBytes;
+	}
+
 	//! Returns mapped buffer.
 	char* tGetBuffer() {
 		if (mapped_buffer == NULL) {
@@ -129,6 +133,17 @@ public:
 
 	char* tGetCurrentPointer() {
 		return curr_map_byte;
+	}
+
+	unsigned tGetCurrentByte() {
+		return curr_map_byte - mapped_buffer;
+	}
+
+	void tSetCarriagePosition(unsigned pos) {
+		if (mapped_buffer == NULL) {
+			tThrowException("File is not mapped!");
+		}
+		curr_map_byte = mapped_buffer + pos;
 	}
 
 	void tMovePointer(int dx) {
