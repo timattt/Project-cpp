@@ -36,7 +36,8 @@
 #define INV_ERROR tThrowException("Invokation error!");
 
 // RAM
-#define RAM(A) proc->ram[A]
+#define WRITE_RAM(A, V) tWriteBytes(V, proc->ram + (proc->code_size + A * 4));
+#define GET_RAM(A) (PROCESSOR_TYPE*) (proc->ram  + (proc->code_size + A * 4))
 
 // If statement
 #define IF(A) if (A)

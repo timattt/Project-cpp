@@ -18,7 +18,7 @@ using std::pair;
 namespace tLanguageHandler {
 
 // 4 byte variable type
-typedef float PROCESSOR_TYPE;
+typedef int PROCESSOR_TYPE;
 
 // Symbol that will be ignored
 const unsigned SRC_IGNORE_SYMBS_QUANT = 1;
@@ -62,7 +62,10 @@ char tGetRegisterIndex(const char *args, unsigned len) {
 
 struct tProcessor {
 	// RAM
-	PROCESSOR_TYPE *ram;
+	char *ram;
+	char *carriage;
+
+	unsigned code_size;
 
 	// Stack
 	tStack<PROCESSOR_TYPE, STACK_SIZE> mem_stack;
@@ -72,14 +75,20 @@ struct tProcessor {
 
 private:
 	// Invokation
-	tFile *exeFile;
 	bool invoking = false;
 
 public:
 	tProcessor(tFile *exeFile_) :
-			ram(NULL), mem_stack( { }), regs(NULL), exeFile(exeFile_) {
+			ram(NULL), carriage(NULL), code_size(0), mem_stack( { }), regs(NULL) {
 		regs = (PROCESSOR_TYPE*) calloc(REGS_SIZE, sizeof(PROCESSOR_TYPE));
-		ram = (PROCESSOR_TYPE*) calloc(RAM_SIZE, sizeof(PROCESSOR_TYPE));
+		ram = (char*) calloc(RAM_SIZE, sizeof(char));
+
+		exeFile_->tStartMapping();
+		tCopyBuffers(exeFile_->tGetBuffer(), ram, code_size =
+				exeFile_->tGetSize());
+		exeFile_->tStopMapping();
+
+		carriage = ram;
 	}
 
 	void tMoveExeCarriage(unsigned byte) {
@@ -87,7 +96,17 @@ public:
 			tThrowException("Program is not invoked!");
 		}
 
-		exeFile->tSetCarriagePosition(byte);
+		carriage = ram + byte;
+	}
+
+	char tGetc() {
+		char res = *carriage;
+		carriage++;
+		return res;
+	}
+
+	unsigned tGetCurrentByte() {
+		return carriage - ram;
 	}
 
 	~tProcessor() {
@@ -96,16 +115,13 @@ public:
 	}
 
 	void tInvoke() {
-		tAssert(exeFile != NULL);
-
 		invoking = true;
 
 		PROCESSOR_TYPE *arg_buf[MAX_ARGS];
 		PROCESSOR_TYPE constant_pointers[MAX_ARGS];
 
-		exeFile->tStartMapping();
-		while (exeFile->tHasMoreSymbs()) {
-			char id = exeFile->tGetc();
+		while (carriage < ram + code_size) {
+			char id = tGetc();
 
 			tProcFunction func = NULL;
 
@@ -119,19 +135,19 @@ public:
 				continue;
 			}
 
-			unsigned total_args = (unsigned) (exeFile->tGetc());
+			unsigned total_args = (unsigned) (tGetc());
 
 			for (unsigned i = 0; i < total_args; i++) {
-				char isRam = exeFile->tGetc();
-				char arg_param = exeFile->tGetc();
+				char isRam = tGetc();
+				char arg_param = tGetc();
 
 				PROCESSOR_TYPE *arg_p = NULL;
 
 				// Arguments are 4 bytes after
 				if (arg_param == (char) 0) {
 					constant_pointers[i] = tConvertBytes<PROCESSOR_TYPE>(
-							exeFile->tGetCurrentPointer());
-					exeFile->tMovePointer(4);
+							carriage);
+					carriage += 4;
 
 					arg_p = &constant_pointers[i];
 				}
@@ -143,13 +159,13 @@ public:
 				if (isRam == 0) {
 					*(arg_buf + i) = arg_p;
 				} else {
-					*(arg_buf + i) = ram + (unsigned) (*arg_p);
+					*(arg_buf + i) = (PROCESSOR_TYPE*) (ram + code_size
+							+ (unsigned) (*arg_p) * sizeof(PROCESSOR_TYPE));
 				}
 			}
 
 			func(arg_buf, total_args, this);
 		}
-		exeFile->tStopMapping();
 
 		invoking = false;
 
@@ -158,6 +174,9 @@ public:
 };
 
 map<string, unsigned>* tGenJmpsLib(tFile *src) {
+	if (src == NULL) {
+		tThrowException("Source code file is NULL!");
+	}
 	map<string, unsigned> *result = new map<string, unsigned>;
 
 	unsigned line_length = 0;
@@ -186,6 +205,7 @@ map<string, unsigned>* tGenJmpsLib(tFile *src) {
 		}
 
 	}
+
 	return result;
 }
 
@@ -205,6 +225,9 @@ void tCompile(tFile *source, tFile *exe) {
 	// Jumps library
 	list<pair<string, unsigned>> jmp_later;
 	map<string, unsigned> *jmp_points = tGenJmpsLib(source);
+
+	// Ensuring end. target is in this file.
+	(*jmp_points)["end."] = 1;
 
 	source->tFlip();
 
@@ -259,13 +282,16 @@ void tCompile(tFile *source, tFile *exe) {
 		exe->tWritec((char) (total_divs - 1));
 
 		for (unsigned i = 1; i < total_divs; i++) {
-			char address = (
-					(tStrlen(divs[i]) > 1) ? tGetRegisterIndex(divs[i], 2) : -1);
-
 			char isRam = 0;
 			if (divs[i][0] == '[' && divs[i][tStrlen(divs[i]) - 1] == ']') {
 				isRam = (char) (127);
+
+				divs[i][tStrlen(divs[i]) - 1] = '\0';
+				divs[i]++;
 			}
+
+			char address = (
+					(tStrlen(divs[i]) > 1) ? tGetRegisterIndex(divs[i], 2) : -1);
 
 			exe->tWritec(isRam);
 
@@ -299,6 +325,7 @@ void tCompile(tFile *source, tFile *exe) {
 		//delete divs;
 	}
 
+	(*jmp_points)["end."] = exe->tGetCurrentByte();
 	exe->tWritec((char) 0);
 
 	while (!jmp_later.empty()) {
