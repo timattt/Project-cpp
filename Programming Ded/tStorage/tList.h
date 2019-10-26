@@ -23,119 +23,121 @@ template<typename T> class tList {
 	// First empty
 	unsigned size;
 
-	void changeCapacity(unsigned newLen) {
-		mem = (char*) realloc(mem, (newLen) * nodeSize());
+	void tChangeCapacity(unsigned newLen) {
+		mem = (char*) realloc(mem, (newLen) * tNodeSize());
 		currentCapacity = newLen;
 	}
 
-	void ensureCapacity(unsigned cap) {
+	void tEnsureCapacity(unsigned cap) {
 		if (currentCapacity < cap) {
-			changeCapacity(cap * 2);
+			tChangeCapacity(cap * 2);
 		}
 	}
 
-	bool isUsed(unsigned pt) {
-		return *(mem + (pt * nodeSize() + 8 + sizeof(T))) == 'a';
+	bool tIsUsed(unsigned pt) {
+		return *(mem + (pt * tNodeSize() + 8 + sizeof(T))) == 'a';
 	}
 
-	void setUsed(unsigned pt, bool val) {
-		*(mem + (pt * nodeSize() + 8 + sizeof(T))) = (val ? 'a' : 'b');
+	void tSetUsed(unsigned pt, bool val) {
+		*(mem + (pt * tNodeSize() + 8 + sizeof(T))) = (val ? 'a' : 'b');
 	}
 
-	unsigned getFirst() {
-		return getNext(0);
+	unsigned tGetFirst() {
+		return tGetNext(0);
 	}
 
-	unsigned getLast() {
-		return getPrev(0);
+	unsigned tGetLast() {
+		return tGetPrev(0);
 	}
 
-	unsigned nodeSize() {
+	unsigned tNodeSize() {
 		return 8 + sizeof(T) + 1;
 	}
 
-	unsigned getPrev(unsigned node_i) {
-		return tConvertBytes<unsigned>(mem + node_i * nodeSize());
+	unsigned tGetPrev(unsigned node_i) {
+		return tConvertBytes<unsigned>(mem + node_i * tNodeSize());
 	}
 
-	void setPrev(unsigned node_i, unsigned v) {
-		tWriteBytes(v, mem + node_i * nodeSize());
+	void tSetPrev(unsigned node_i, unsigned v) {
+		tWriteBytes(v, mem + node_i * tNodeSize());
 	}
 
-	unsigned getNext(unsigned node_i) {
-		return tConvertBytes<unsigned>(mem + node_i * nodeSize() + 4);
+	unsigned tGetNext(unsigned node_i) {
+		return tConvertBytes<unsigned>(mem + node_i * tNodeSize() + 4);
 	}
 
-	void setNext(unsigned node_i, unsigned v) {
-		tWriteBytes(v, mem + node_i * nodeSize() + 4);
+	void tSetNext(unsigned node_i, unsigned v) {
+		tWriteBytes(v, mem + node_i * tNodeSize() + 4);
 	}
 
-	T& getElement(unsigned node_i) {
-		return tConvertBytes<T>(mem + 8 + node_i * nodeSize());
+	T& tGetElement(unsigned node_i) {
+		return tConvertBytes<T>(mem + 8 + node_i * tNodeSize());
 	}
 
-	void setElement(unsigned node_i, const T &v) {
-		tWriteBytes(v, mem + 8 + node_i * nodeSize());
+	void tSetElement(unsigned node_i, const T &v) {
+		tWriteBytes(v, mem + 8 + node_i * tNodeSize());
 	}
 
-	void clearNode(unsigned a) {
-		for (unsigned i = 0; i < nodeSize(); i++) {
-			mem[a * nodeSize() + i] = 0;
+	void tClearNode(unsigned a) {
+		for (unsigned i = 0; i < tNodeSize(); i++) {
+			mem[a * tNodeSize() + i] = 0;
 		}
 	}
 
 	// Creates node and returns pointer to it.
-	unsigned createNode() {
-		ensureCapacity(freeElement + 1);
+	unsigned tCreateNode() {
+		tEnsureCapacity(freeElement + 1);
 		unsigned result = freeElement;
 		freeElement++;
 
-		clearNode(result);
-		setUsed(result, 1);
+		tClearNode(result);
+		tSetUsed(result, 1);
 		return result;
 	}
 
-	void deleteNode(unsigned node) {
-		clearNode(node);
+	void tDeleteNode(unsigned node) {
+		tClearNode(node);
 	}
 
 	// Converts position from start into pointer to cell in the memory.
-	unsigned getPointer(unsigned pos) {
-		unsigned node = getFirst();
+	unsigned tGetPointer(unsigned pos) {
+		unsigned node = tGetFirst();
 		for (unsigned i = 0; i < pos; i++) {
-			node = getNext(node);
+			node = tGetNext(node);
 		}
 		return node;
 	}
 
-	void move_to_empty(unsigned from, unsigned to) {
-		unsigned prev = getPrev(from);
-		unsigned next = getNext(from);
+	void tMove_to_empty(unsigned from, unsigned to) {
+		unsigned prev = tGetPrev(from);
+		unsigned next = tGetNext(from);
 
-		setNext(prev, to);
-		setPrev(next, to);
+		tSetNext(prev, to);
+		tSetPrev(next, to);
 
-		tCopyBuffers(mem + from * nodeSize(), mem + to * nodeSize(), nodeSize());
-		clearNode(from);
-		setUsed(to, 1);
+		tCopyBuffers(mem + from * tNodeSize(), mem + to * tNodeSize(),
+				tNodeSize());
+		tClearNode(from);
+		tSetUsed(to, 1);
 	}
 
 public:
 
 	tList() :
 			mem(NULL), currentCapacity(1), freeElement(1), size(0) {
-		mem = new char[nodeSize()];
-		clearNode(0);
-		setUsed(0, 1);
+		mem = new char[tNodeSize()];
+		tClearNode(0);
+		tSetUsed(0, 1);
 	}
 
-	void shrink() {
+	// Removes holes from this list. And makes it uses minimum memory.
+	void tShrink() {
 		unsigned end = freeElement - 1;
-		for (unsigned start = 1; start < end; ) {
-			while (isUsed(start) && start < end) {
+		for (unsigned start = 1; start < end;) {
+			while (tIsUsed(start) && start < end) {
 				start++;
 			}
-			while (!isUsed(end) && start < end) {
+			while (!tIsUsed(end) && start < end) {
 				end--;
 			}
 
@@ -145,130 +147,78 @@ public:
 
 			// start is empty
 			// end is filled
-			move_to_empty(end, start);
+			tMove_to_empty(end, start);
 		}
 
-		changeCapacity(end + 1);
+		tChangeCapacity(end + 1);
 		freeElement = end + 1;
 	}
 
-	T& get_p(unsigned pt) {
-		return getElement(pt);
+	// Gives element located in node described by pt.
+	T& tGet_p(unsigned pt) {
+		return tGetElement(pt);
 	}
 
-	T& get(unsigned pos) {
-		return get_p(getPointer(pos));
+	// Gives element from pos from start.
+	T& tGet(unsigned pos) {
+		return tGet_p(tGetPointer(pos));
 	}
 
-	unsigned getSize() {
+	// Gives quantity of elements stored in this list.
+	unsigned tGetSize() {
 		return size;
 	}
 
 	// Adds element elem into pos position from first.
 	// And returns pointer to cell where element is stored in memory.
-	unsigned add(const T &elem, unsigned pos) {
+	unsigned tAdd(const T &elem, unsigned pos) {
 		unsigned prevNode = 0;
 		for (unsigned i = 0; i < pos; i++) {
-			prevNode = getNext(prevNode);
+			prevNode = tGetNext(prevNode);
 		}
-		unsigned nextNode = getNext(prevNode);
+		unsigned nextNode = tGetNext(prevNode);
 
-		unsigned node = createNode();
+		unsigned node = tCreateNode();
 
-		setNext(node, nextNode);
-		setPrev(node, prevNode);
-		setElement(node, elem);
+		tSetNext(node, nextNode);
+		tSetPrev(node, prevNode);
+		tSetElement(node, elem);
 
-		setNext(prevNode, node);
-		setPrev(nextNode, node);
+		tSetNext(prevNode, node);
+		tSetPrev(nextNode, node);
 
 		size++;
 
 		return node;
 	}
 
-	void remove(unsigned pos) {
-		remove_p(getPointer(pos));
+	// Removes element from pos position from start.
+	void tRemove(unsigned pos) {
+		tRemove_p(tGetPointer(pos));
 	}
 
-	void remove_p(unsigned node) {
-		unsigned prev = getPrev(node);
-		unsigned next = getNext(node);
+	// Removes element from node with given pointer.
+	void tRemove_p(unsigned node) {
+		unsigned prev = tGetPrev(node);
+		unsigned next = tGetNext(node);
 
-		setNext(prev, next);
-		setPrev(next, prev);
+		tSetNext(prev, next);
+		tSetPrev(next, prev);
 
-		deleteNode(node);
+		tDeleteNode(node);
 
 		size--;
 	}
 
-	void addFirst(const T &elem) {
+	// Adds element to be the first int his list.
+	void tAddFirst(const T &elem) {
 		add(elem, 0);
 	}
 
-	void addLast(const T &elem) {
+	// Adds element to be last in this list.
+	void tAddLast(const T &elem) {
 		add(elem, size);
 	}
-
-	void seeElements() {
-		cout << size << " " << currentCapacity << "\n";
-		return;
-		unsigned node = getFirst();
-		cout << "[";
-		for (unsigned i = 0; i < size; i++, node = getNext(node)) {
-			cout << getElement(node);
-			if (i + 1 < size) {
-				cout << " ";
-			}
-		}
-		cout << "]\n";
-	}
-
-	void info() {
-		cout << "cap: " << currentCapacity << "\n";
-		cout << "used:[";
-		for (unsigned i = 0; i < currentCapacity; i++) {
-			if (1) {
-				cout << isUsed(i);
-				if (i + 1 < currentCapacity) {
-					cout << " ";
-				}
-			}
-		}
-		cout << "]\n";
-		cout << "prev:[";
-		for (unsigned i = 0; i < currentCapacity; i++) {
-			if (1) {
-				cout << getPrev(i);
-				if (i + 1 < currentCapacity) {
-					cout << " ";
-				}
-			}
-		}
-		cout << "]\n";
-		cout << " ind:[";
-		for (unsigned i = 0; i < currentCapacity; i++) {
-			if (1) {
-				cout << (i);
-				if (i + 1 < currentCapacity) {
-					cout << " ";
-				}
-			}
-		}
-		cout << "]\n";
-		cout << "next:[";
-		for (unsigned i = 0; i < currentCapacity; i++) {
-			if (1) {
-				cout << getNext(i);
-				if (i + 1 < currentCapacity) {
-					cout << " ";
-				}
-			}
-		}
-		cout << "]\n";
-	}
-
 };
 
 }

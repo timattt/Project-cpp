@@ -52,7 +52,7 @@ char tGetRegisterIndex(const char *args, unsigned len) {
 	char s1 = args[0];
 	char s2 = args[1];
 
-	// If bp register
+	// If bp is register
 	if (s1 == 'b' && s2 == 'p') {
 		return 1;
 	}
@@ -71,14 +71,12 @@ char tGetRegisterIndex(const char *args, unsigned len) {
 }
 
 struct tProcessor {
+
 	// RAM
 	char *ram;
 	char *carriage;
 	char *vram;
 	unsigned code_size;
-
-	// Window
-	bool windowCreated;
 
 	// Stack
 	tStack<PROCESSOR_TYPE, STACK_SIZE> mem_stack;
@@ -87,10 +85,15 @@ struct tProcessor {
 	PROCESSOR_TYPE *regs;
 
 private:
+
 	// Invokation
 	bool invoking = false;
 
+	// Window
+	bool windowCreated;
+
 public:
+
 	tProcessor(tFile *exeFile_) :
 			ram(NULL), carriage(NULL), vram(NULL), code_size(0), windowCreated(
 					0), mem_stack( { }), regs(NULL) {
@@ -106,11 +109,13 @@ public:
 		carriage = ram;
 	}
 
+	// Puts value to given place in the memory.
 	void putToRam(unsigned place, PROCESSOR_TYPE val) {
 		tWriteBytes<PROCESSOR_TYPE>(val,
 				ram + code_size + sizeof(PROCESSOR_TYPE) * place);
 	}
 
+	// Gives element located in memory.
 	PROCESSOR_TYPE getFromRam(unsigned place) {
 		PROCESSOR_TYPE v = tConvertBytes<PROCESSOR_TYPE>(
 				ram + code_size + sizeof(PROCESSOR_TYPE) * place);
@@ -231,7 +236,6 @@ public:
 		while (carriage != ram + code_size) {
 			// Reading id of function.
 			char id = tGetc();
-
 			// Generation of normal c++ function.
 			tProcFunction func = NULL;
 
@@ -289,7 +293,7 @@ public:
 
 };
 
-// Generates map where all targets in this source file.
+// Generates map where all targets in this source file are stored.
 map<string, unsigned>* tGenJmpsLib(tFile *src) {
 	if (src == NULL) {
 		tThrowException("Source code file is NULL!");
