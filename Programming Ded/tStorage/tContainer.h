@@ -8,7 +8,7 @@ using namespace tUtilities;
 namespace tStorage {
 
 const unsigned total_canaries = 2;
-const char canary_value = 255;
+const char canary_value = 127;
 
 //!This constant is used in default hashing algorithm
 const unsigned P = 31;

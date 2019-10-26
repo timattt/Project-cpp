@@ -2,6 +2,7 @@
 #define T_UTILITIES
 
 #include <windows.h>
+#include <bits/stdc++.h>
 
 namespace tUtilities {
 
@@ -31,6 +32,12 @@ public:
 //! Returns minimum of a and b.
 int tMin(int a, int b) {
 	return (a < b ? a : b);
+}
+
+
+//! Returns minimum of a and b.
+int tMax(int a, int b) {
+	return (a < b ? b : a);
 }
 
 char** tParse(const char *text, unsigned text_length, const char *bad_symbols,
@@ -114,13 +121,27 @@ int tStrcmp(const char *str1, const char *str2, int size = -1) {
 	return 0;
 }
 
+template<typename T> void tSwap(T &a, T &b) {
+	T tmp = a;
+	a = b;
+	b = tmp;
+}
+
+void tSwapBuffers(char * a, char * b, unsigned len) {
+	for (unsigned i = 0; i < len; i++) {
+		char tmp = a[i];
+		a[i] = b[i];
+		b[i] = tmp;
+	}
+}
+
 //! Writes element into given bytes array.
 template<typename T> void tWriteBytes(const T &elem, char *dest) {
 	__mem__.__tWriteBytes(elem, dest);
 }
 
 //! Converts data from byte array into any element.
-template<typename T> T& tConvertBytes(const char *data) {
+template<typename T> T& tConvertBytes(char *data) {
 	return (*(T*) (data));
 }
 

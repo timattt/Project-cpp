@@ -4,6 +4,8 @@
 #undef ARG1
 #undef ARG2
 #undef ARG3
+#undef ARG4
+#undef ARG5
 #undef HAVE_ARGS
 #undef NO_ARGS
 #undef HAVE_ONE_ARG
@@ -18,3 +20,4 @@
 #undef THEN
 #undef ELSE
 #undef BYTE_IND
+#undef PIXEL

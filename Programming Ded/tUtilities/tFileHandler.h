@@ -28,19 +28,18 @@ class tFile {
 	//! Quantity of bytes in this file. After these bytes goes [\0].
 	unsigned sizeBytes;
 
-	~tFile() {
-		tStopMapping();
-		tCloseFile();
-	}
-
 	//!Closes file.
 	void tCloseFile() {
 		CloseHandle(file_handle);
 	}
 
 public:
+	~tFile() {
+		tStopMapping();
+		tCloseFile();
+	}
 
-	const char * tGetName() {
+	const char* tGetName() {
 		return name;
 	}
 

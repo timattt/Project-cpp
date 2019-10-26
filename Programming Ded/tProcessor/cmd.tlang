@@ -2,8 +2,11 @@
 // Two args: pushes value of the second arg into first arg.
 T_PROC_FUNC(push, 40, {
 			HAVE_ONE_ARG(PUSH(ARG1))
+			HAVE_TWO_ARGS(
+					ARG1 = ARG2;
+			)
 		})
-		
+
 // No args: Pops value from stack and prints it.
 // Have args: Prints them all.
 T_PROC_FUNC(out, 41, {
@@ -22,10 +25,10 @@ T_PROC_FUNC(in, 42, {
 			NO_ARGS(PROCESSOR_TYPE x = 0; cin >> x; PUSH(x))
 			HAVE_ARGS
 			(
-				FOR_EACH_ARG
-				(
-					cin >> ARG;
-				)
+					FOR_EACH_ARG
+					(
+							cin >> ARG;
+					)
 			)
 		})
 // No args: Pops one element 
@@ -34,10 +37,10 @@ T_PROC_FUNC(pop, 43, {
 			NO_ARGS(POP)
 			HAVE_ARGS
 			(
-				FOR_EACH_ARG
-				(
-						ARG = POP;
-				)
+					FOR_EACH_ARG
+					(
+							ARG = POP;
+					)
 			)
 		})
 // No args: Pops two values from stack and pushes their sum.
@@ -59,15 +62,15 @@ T_PROC_FUNC(add, 44, {
 T_PROC_FUNC(mul, 45, {
 			HAVE_ARGS
 			(
-				PROCESSOR_TYPE RESULT = 1;
-				FOR_EACH_ARG
-				(
-					RESULT *= ARG
-				)
-				PUSH(RESULT);
+					PROCESSOR_TYPE RESULT = 1;
+					FOR_EACH_ARG
+					(
+							RESULT *= ARG
+					)
+					PUSH(RESULT);
 			)
 			NO_ARGS(PUSH(POP * POP))
-	})
+		})
 // No args: pops from stack value and pushes into stack its square root.
 // One arg: pushes into stack sqrt of this argument.
 T_PROC_FUNC(sqrt, 46, {
@@ -89,7 +92,7 @@ T_PROC_FUNC(neg, 47, {
 			)
 			NO_ARGS
 			(
-				PUSH(-POP)
+					PUSH(-POP)
 			)
 		})
 // No args: pops two values a1, a2 and pushes (a2 / a1)
@@ -97,14 +100,14 @@ T_PROC_FUNC(neg, 47, {
 T_PROC_FUNC(div, 48, {
 			NO_ARGS
 			(
-				PROCESSOR_TYPE a = POP;
-				PROCESSOR_TYPE b = POP;
+					PROCESSOR_TYPE a = POP;
+					PROCESSOR_TYPE b = POP;
 
-				PUSH(b / a);
+					PUSH(b / a);
 			)
 			HAVE_TWO_ARGS
 			(
-				PUSH(ARG1 / ARG2)
+					PUSH(ARG1 / ARG2)
 			)
 		})
 // One arg: Moves processor carriage to given byte.		
@@ -142,30 +145,65 @@ T_PROC_FUNC(call, 52, {
 			)
 			BYTE_IND return_point = proc->tGetCurrentByte();
 			BYTE_IND old_bp = BP;
+			
 			BP += 2;
 			
-			WRITE_RAM((BYTE_IND)BP - 1, return_point);
-			WRITE_RAM((BYTE_IND)BP - 2, old_bp);
-			
+			WRITE_RAM((BYTE_IND)BP, return_point);
+			WRITE_RAM((BYTE_IND)BP + 1, old_bp);
+
 			JMP(ARG1)
-})
+			
+			IF (proc->code_size + sizeof(PROCESSOR_TYPE)*(BYTE_IND)BP >= RAM_SIZE) {
+				INV_ERROR
+			}
+		})
 // No args: Returns to line after call function was used.
 // If argument quantity is not 0 then exception will be throwen.
 T_PROC_FUNC(ret, 53, {
 			IF (TOTAL_ARGS != 0) THEN (
 				INV_ERROR
 			)
-			BYTE_IND return_point = (BYTE_IND) GET_RAM((BYTE_IND)BP - 1);
-			BYTE_IND old_bp = (BYTE_IND) GET_RAM((BYTE_IND)BP - 2);
+
+			IF (BP == 0) THEN (
+				INV_ERROR
+			)
 			
+			BYTE_IND return_point = (BYTE_IND) GET_RAM((BYTE_IND)BP);
+			BYTE_IND old_bp = (BYTE_IND) GET_RAM((BYTE_IND)BP + 1);
+	
 			JMP(return_point);
 			BP = old_bp;
-})
+		})
 // No args: Moves carriage to the end of the program.
 // If argument quantity is not 0 then exception will be throwen.
 T_PROC_FUNC(end., 54, {
 			IF (TOTAL_ARGS != 0) THEN (
 				INV_ERROR
 			)
-			JMP(proc->code_size)
+			proc->tStop();
+		})
+T_PROC_FUNC(vramset, 55, {
+			IF (TOTAL_ARGS != 5) THEN (
+				INV_ERROR
+			)
+			BYTE_IND x = ARG1;
+			BYTE_IND y = ARG2;
+			
+			BYTE r = ARG3;
+			BYTE g = ARG4;
+			BYTE b = ARG5;
+			
+			BYTE * pix = PIXEL(x, y);
+			pix[0] = r;
+			pix[1] = g;
+			pix[2] = b;
+		})	
+T_PROC_FUNC(repaint, 56, {
+		proc->repaint();
+})
+T_PROC_FUNC(makewindow, 57, {
+		proc->initTX();
+})
+T_PROC_FUNC(killwindow, 58, {
+		proc->cleanupTX();
 })
