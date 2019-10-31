@@ -3,12 +3,9 @@
 
 #include "../tUtilities/tUtilities.h"
 
-using std::cout;
 using namespace tUtilities;
 
 namespace tStorage {
-
-const unsigned NO_INDEX = 123456789;
 
 template<typename T> class tList {
 
