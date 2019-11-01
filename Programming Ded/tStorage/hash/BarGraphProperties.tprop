@@ -1,0 +1,33 @@
+// elem, len
+T_HASH(CONSTANT, {
+	return 1;
+})
+T_HASH(FIRST_ELEM, {
+	return elem[0];
+})
+T_HASH(LEN, {
+	return len;
+})
+T_HASH(SUM, {
+	unsigned sum = 0;
+	for (unsigned i = 0; i < len; i++) {
+		sum += elem[i];
+	}
+	return sum;
+})
+T_HASH(SUM_DIV_LEN, {
+	unsigned sum = 0;
+	for (unsigned i = 0; i < len; i++) {
+		sum += elem[i];
+	}
+	return sum / len;
+})
+T_HASH(GNU, {
+	unsigned h = 5381;
+
+    for (unsigned i = 0; i < len; i++) {
+        h = (h << 5) + h + elem[i];
+    }
+
+    return h;
+})

@@ -14,6 +14,11 @@ int tSymbolsCount(const char *line, char symb);
 int tGetFileSize(const char *name);
 int tStrlen(const char *str);
 
+template<typename A, typename B> struct tPair {
+	A x;
+	B y;
+};
+
 namespace {
 
 // For the encapsulation!

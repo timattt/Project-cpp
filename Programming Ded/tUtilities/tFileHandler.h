@@ -43,6 +43,13 @@ public:
 		return name;
 	}
 
+	template<typename T> void tWriteNum(T num) {
+		std::sprintf(curr_map_byte, "%d", num);
+		while (*curr_map_byte != '\0') {
+			curr_map_byte++;
+		}
+	}
+
 	//! Writes given line.
 	//! If length is initialized then uses only first [length] symbols.
 	//! If not then uses tStrlen() function.
@@ -58,6 +65,21 @@ public:
 		curr_map_byte += len;
 
 		tWritec('\n');
+	}
+
+	//! Writes given line. But without '\n'
+	//! If length is initialized then uses only first [length] symbols.
+	//! If not then uses tStrlen() function.
+	void tWrite(const char *line, unsigned length = 0) {
+		unsigned len = 0;
+		if (line == NULL
+				|| mapped_buffer + sizeBytes
+						< curr_map_byte
+								+ (len = (length == 0 ? tStrlen(line) : length))) {
+			tThrowException("Can not write line!");
+		}
+		tCopyBuffers(line, curr_map_byte, len);
+		curr_map_byte += len;
 	}
 
 	//! Writes any symbol to current byte.

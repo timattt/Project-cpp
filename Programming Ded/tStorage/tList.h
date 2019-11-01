@@ -169,6 +169,9 @@ public:
 	// Adds element elem into pos position from first.
 	// And returns pointer to cell where element is stored in memory.
 	unsigned tAdd(const T &elem, unsigned pos) {
+		if (pos > size) {
+			tThrowException("Out of bounds!");
+		}
 		unsigned prevNode = 0;
 		for (unsigned i = 0; i < pos; i++) {
 			prevNode = tGetNext(prevNode);
@@ -207,14 +210,21 @@ public:
 		size--;
 	}
 
+	void tForEach(void (*consumer)(const T & elem)) {
+		for (unsigned node = tGetFirst(); node != tGetLast(); node = tGetNext(node)) {
+			const T & elem = tGetElement(node);
+			consumer(elem);
+		}
+	}
+
 	// Adds element to be the first int his list.
 	void tAddFirst(const T &elem) {
-		add(elem, 0);
+		tAdd(elem, 0);
 	}
 
 	// Adds element to be last in this list.
 	void tAddLast(const T &elem) {
-		add(elem, size);
+		tAdd(elem, size);
 	}
 };
 
