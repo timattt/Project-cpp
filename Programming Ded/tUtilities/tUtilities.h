@@ -13,11 +13,43 @@ template<typename T> void tCopyBuffers(const T *from, T *to, unsigned length);
 int tSymbolsCount(const char *line, char symb);
 int tGetFileSize(const char *name);
 int tStrlen(const char *str);
+int tStrcmp(const char *str1, const char *str2, int size);
 
 template<typename A, typename B> struct tPair {
 	A x;
 	B y;
 };
+
+void tReadLine(char * dest, unsigned len = 99999999) {
+	if (len == 99999999) {
+		len = tStrlen(dest);
+	}
+	for (unsigned i = 0; i < len; i++) {
+		dest[i] = '\0';
+	}
+	char c = 0;
+	std::cout.flush();
+	for (unsigned i = 0; ; i++) {
+		if (i == len) {
+			realloc(dest, i + 1);
+			len = i + 1;
+		}
+		c = getchar();
+		if (c == '\n') {
+			dest[i] = '\0';
+			break;
+		}
+		dest[i] = c;
+	}
+	std::cout.flush();
+}
+
+char tReadCharFromLine() {
+	std::cout.flush();
+	char c = getchar();
+	while (getchar() != '\n');
+	return c;
+}
 
 namespace {
 
@@ -32,13 +64,22 @@ public:
 	}
 } __mem__;
 }
-//
+
+template<typename T = int> T tBinpow(T a, T n) {
+	T res = 1;
+	while (n) {
+		if (n & 1)
+			res *= a;
+		a *= a;
+		n >>= 1;
+	}
+	return res;
+}
 
 //! Returns minimum of a and b.
 int tMin(int a, int b) {
 	return (a < b ? a : b);
 }
-
 
 //! Returns minimum of a and b.
 int tMax(int a, int b) {
@@ -113,7 +154,6 @@ int tStrcmp(const char *str1, const char *str2, int size = -1) {
 	if (size < 0) {
 		size = tMin(tStrlen(str1), tStrlen(str2));
 	}
-
 	for (unsigned i = 0; i < (unsigned) size; i++) {
 		if (str1[i] < str2[i]) {
 			return -1;
@@ -132,7 +172,7 @@ template<typename T> void tSwap(T &a, T &b) {
 	b = tmp;
 }
 
-void tSwapBuffers(char * a, char * b, unsigned len) {
+void tSwapBuffers(char *a, char *b, unsigned len) {
 	for (unsigned i = 0; i < len; i++) {
 		char tmp = a[i];
 		a[i] = b[i];

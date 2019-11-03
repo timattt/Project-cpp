@@ -194,7 +194,17 @@ public:
 
 	// Removes element from pos position from start.
 	void tRemove(unsigned pos) {
+		if (size == 0) {
+			tThrowException("Size is zero!");
+		}
 		tRemove_p(tGetPointer(pos));
+	}
+
+	void tRemoveLast() {
+		if (size == 0) {
+			tThrowException("Out of bounds!");
+		}
+		tRemove(size - 1);
 	}
 
 	// Removes element from node with given pointer.
@@ -211,7 +221,7 @@ public:
 	}
 
 	void tForEach(void (*consumer)(const T & elem)) {
-		for (unsigned node = tGetFirst(); node != tGetLast(); node = tGetNext(node)) {
+		for (unsigned node = tGetFirst(); node != 0; node = tGetNext(node)) {
 			const T & elem = tGetElement(node);
 			consumer(elem);
 		}
