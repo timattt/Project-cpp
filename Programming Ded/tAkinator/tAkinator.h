@@ -73,7 +73,8 @@ public:
 	}
 
 };
-#define DEB cout << "debug\n";cout.flush();
+
+//! Loads tree from given file.
 statementVertex* load(tFile *file) {
 	statementVertex *result = NULL;
 
@@ -136,14 +137,7 @@ statementVertex* load(tFile *file) {
 	return result;
 }
 
-void info(statementVertex *vert) {
-	if (vert != NULL) {
-		cout << "Vertex: " << vert->statement << "\n";
-		info(vert->yes);
-		info(vert->no);
-	}
-}
-
+//! Gives length of biggest path from root to any vertex.
 unsigned biggestPathFromRoot(statementVertex *vert) {
 	if (vert == NULL || (vert->yes == NULL && vert->no == NULL)) {
 		return 0;
@@ -153,6 +147,7 @@ unsigned biggestPathFromRoot(statementVertex *vert) {
 					biggestPathFromRoot(vert->no));
 }
 
+//! Saves tree in given file.
 void save(tFile *dest, statementVertex *vert) {
 	unsigned totalLines = tBinpow<unsigned>(2, biggestPathFromRoot(vert) + 2)
 			- 1;
@@ -227,6 +222,7 @@ void save(tFile *dest, statementVertex *vert) {
 	dest->tStopMapping();
 }
 
+//! Manipulating this tree.
 void guess(statementVertex *&root) {
 	if (root == NULL) {
 		cout << NEW_OBJECT << "\n";
@@ -277,6 +273,7 @@ void guess(statementVertex *&root) {
 	}
 }
 
+//! Finds node with given statement.
 statementVertex* find(statementVertex *&root, char *name) {
 	if (root != NULL) {
 		if (root->isLeaf()) {
@@ -291,6 +288,7 @@ statementVertex* find(statementVertex *&root, char *name) {
 	return NULL;
 }
 
+//! Gives properties of given object.
 void definition(char *name, unsigned len, statementVertex *&root,
 		tList<const tPair<char*, bool>> *stacktrc = NULL) {
 	bool created = 0;
@@ -324,6 +322,10 @@ void definition(char *name, unsigned len, statementVertex *&root,
 	if (created) {
 		delete stacktrc;
 	}
+}
+
+void draw(statementVertex * root) {
+
 }
 
 void runAkinator() {
