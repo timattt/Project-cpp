@@ -292,28 +292,37 @@ statementVertex* find(statementVertex *&root, char *name) {
 }
 
 void definition(char *name, unsigned len, statementVertex *&root,
-		tList<const tPair<char*, bool>> stacktrc = { }) {
+		tList<const tPair<char*, bool>> *stacktrc = NULL) {
+	bool created = 0;
+	if (stacktrc == NULL) {
+		stacktrc = new tList<const tPair<char*, bool>>();
+		created = 1;
+	}
 	if (root != NULL) {
 		if (root->isLeaf()) {
-			if (tStrcmp(root->statement, name) == 0) {
+			if (tStrcmp(root->statement, name, len) == 0) {
 				cout << name << DEFIN << "\n";
-				stacktrc.tForEach([](const tPair<char*, bool> &elem) {
+				stacktrc->tForEach([](const tPair<char*, bool> &elem) {
 					if (!elem.y) {
 						cout << DEFIN_NO;
 					}
-					if (elem.x != NULL)
+					if (elem.x != NULL) {
 						cout << elem.x << "\n";
+					}
 				});
 			}
 		} else {
-			stacktrc.tAddLast( { root->statement, 1 });
+			stacktrc->tAddLast( { root->statement, 1 });
 			definition(name, len, root->yes, stacktrc);
-			stacktrc.tRemoveLast();
+			stacktrc->tRemoveLast();
 
-			stacktrc.tAddLast( { root->statement, 0 });
+			stacktrc->tAddLast( { root->statement, 0 });
 			definition(name, len, root->no, stacktrc);
-			stacktrc.tRemoveLast();
+			stacktrc->tRemoveLast();
 		}
+	}
+	if (created) {
+		delete stacktrc;
 	}
 }
 
