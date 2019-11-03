@@ -1,6 +1,7 @@
 #ifndef T_AKINATOR
 #define T_AKINATOR
 
+#include "../TXLIB.h"
 #include <bits/stdc++.h>
 #include "../tUtilities/tUtilities.h"
 #include "../tStorage/tList.h"
@@ -324,8 +325,64 @@ void definition(char *name, unsigned len, statementVertex *&root,
 	}
 }
 
-void draw(statementVertex * root) {
+const unsigned WIDTH = 1300;
+const unsigned HEIGHT = 1000;
 
+const unsigned SIDE = 35;
+
+void drawLines(statementVertex *vert, unsigned x = WIDTH / 2 - SIDE / 2,
+		unsigned y = SIDE, unsigned px = WIDTH / 2, unsigned py = SIDE, unsigned step = 9999) {
+	if (vert == NULL) {
+		return;
+	}
+	if (step == 9999) {
+		step = (HEIGHT - SIDE) / (biggestPathFromRoot(vert) + 1);
+	}
+	txSetColor(RGB(0, 0, 127));
+	txLine(SIDE / 2 + x, SIDE / 2 + y, SIDE / 2 + px, SIDE / 2 + py);
+
+	unsigned w = x / 2;
+	if (vert->no != NULL) {
+		drawLines(vert->no, x - w, y + step, x, y, step);
+	}
+	if (vert->yes != NULL) {
+		drawLines(vert->yes, x + w, y + step, x, y, step);
+	}
+}
+
+void drawVertex(statementVertex *vert, unsigned x = WIDTH / 2 - SIDE / 2,
+		unsigned y = SIDE, unsigned px = WIDTH / 2, unsigned py = SIDE, unsigned step = 9999) {
+	if (vert == NULL) {
+		return;
+	}
+	if (step == 9999) {
+		step = (HEIGHT - SIDE) / (biggestPathFromRoot(vert) + 1);
+	}
+	char col = (vert->isLeaf() ? 127 : 0);
+	txSetFillColor(RGB(col, 127, 0));
+	txSetColor(RGB(0, 127, 127));
+
+	txRectangle(SIDE / 2 + x - SIDE / 2, SIDE / 2 + y - SIDE / 2, SIDE / 2 + x + SIDE / 2,
+			SIDE / 2 + y + SIDE / 2);
+	txSetColor(RGB(127, 0, 0));
+	txDrawText(SIDE / 2 + x - SIDE / 2,SIDE / 2 +  y - SIDE / 2, SIDE / 2 + x + SIDE / 2,
+			SIDE / 2 + y + SIDE / 2, vert->statement);
+
+	unsigned w = x / 2;
+	if (vert->no != NULL) {
+		drawVertex(vert->no, x - w, y + step, x, y, step);
+	}
+	if (vert->yes != NULL) {
+		drawVertex(vert->yes, x + w, y + step, x, y, step);
+	}
+}
+
+void draw(statementVertex *root) {
+	txCreateWindow(WIDTH, HEIGHT, 1);
+	txSetColor(RGB(127, 127, 127));
+	txSelectFont("Times new roman", SIDE / 5 * 2);
+	drawLines(root);
+	drawVertex(root);
 }
 
 void runAkinator() {
@@ -363,6 +420,12 @@ void runAkinator() {
 			root = load(in);
 			delete in;
 			delete name;
+		}
+		if (op == 'p') {
+			draw(root);
+		}
+		if (op == 't') {
+			txDestroyWindow();
 		}
 	}
 }
