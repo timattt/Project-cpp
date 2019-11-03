@@ -26,7 +26,7 @@ char AND[] = " and ";
 char DEFIN[] = " is: ";
 char DEFIN_NO[] = "Not ";
 char WHAT_TO_DO[] =
-		"Choose operation: g - guess, d - define, e - end, s - save, l - load";
+		"Choose operation: g - guess, d - define, e - end, s - save, l - load, p - paint TX, t - terminate TX window, w - wizzard graph";
 char DEF_NAME[] = "Input name";
 char FILE_NAME[] = "Input file name";
 
@@ -140,7 +140,7 @@ statementVertex* load(tFile *file) {
 
 //! Gives length of biggest path from root to any vertex.
 unsigned biggestPathFromRoot(statementVertex *vert) {
-	if (vert == NULL || (vert->yes == NULL && vert->no == NULL)) {
+	if (vert == NULL || (vert->isLeaf())) {
 		return 0;
 	}
 	return 1
@@ -148,12 +148,18 @@ unsigned biggestPathFromRoot(statementVertex *vert) {
 					biggestPathFromRoot(vert->no));
 }
 
+unsigned totalVertices(statementVertex *vert) {
+	if (vert == NULL) {
+		return 0;
+	}
+	return 1 + totalVertices(vert->no) + totalVertices(vert->yes);
+}
+
 //! Saves tree in given file.
 void save(tFile *dest, statementVertex *vert) {
-	unsigned totalLines = tBinpow<unsigned>(2, biggestPathFromRoot(vert) + 2)
-			- 1;
+	unsigned totalVerts = totalVertices(vert);
 
-	dest->tStartMapping(2 * totalLines * STR_LEN);
+	dest->tStartMapping(2 * totalVerts * STR_LEN);
 
 	tWriteBytes<unsigned>(0, dest->tGetBuffer());
 	dest->tMovePointer(4);
@@ -331,7 +337,8 @@ const unsigned HEIGHT = 1000;
 const unsigned SIDE = 35;
 
 void drawLines(statementVertex *vert, unsigned x = WIDTH / 2 - SIDE / 2,
-		unsigned y = SIDE, unsigned px = WIDTH / 2, unsigned py = SIDE, unsigned step = 9999) {
+		unsigned y = SIDE, unsigned px = WIDTH / 2, unsigned py = SIDE,
+		unsigned step = 9999) {
 	if (vert == NULL) {
 		return;
 	}
@@ -351,7 +358,8 @@ void drawLines(statementVertex *vert, unsigned x = WIDTH / 2 - SIDE / 2,
 }
 
 void drawVertex(statementVertex *vert, unsigned x = WIDTH / 2 - SIDE / 2,
-		unsigned y = SIDE, unsigned px = WIDTH / 2, unsigned py = SIDE, unsigned step = 9999) {
+		unsigned y = SIDE, unsigned px = WIDTH / 2, unsigned py = SIDE,
+		unsigned step = 9999) {
 	if (vert == NULL) {
 		return;
 	}
@@ -362,11 +370,11 @@ void drawVertex(statementVertex *vert, unsigned x = WIDTH / 2 - SIDE / 2,
 	txSetFillColor(RGB(col, 127, 0));
 	txSetColor(RGB(0, 127, 127));
 
-	txRectangle(SIDE / 2 + x - SIDE / 2, SIDE / 2 + y - SIDE / 2, SIDE / 2 + x + SIDE / 2,
-			SIDE / 2 + y + SIDE / 2);
+	txRectangle(SIDE / 2 + x - SIDE / 2, SIDE / 2 + y - SIDE / 2,
+			SIDE / 2 + x + SIDE / 2, SIDE / 2 + y + SIDE / 2);
 	txSetColor(RGB(127, 0, 0));
-	txDrawText(SIDE / 2 + x - SIDE / 2,SIDE / 2 +  y - SIDE / 2, SIDE / 2 + x + SIDE / 2,
-			SIDE / 2 + y + SIDE / 2, vert->statement);
+	txDrawText(SIDE / 2 + x - SIDE / 2, SIDE / 2 + y - SIDE / 2,
+			SIDE / 2 + x + SIDE / 2, SIDE / 2 + y + SIDE / 2, vert->statement);
 
 	unsigned w = x / 2;
 	if (vert->no != NULL) {
@@ -375,6 +383,61 @@ void drawVertex(statementVertex *vert, unsigned x = WIDTH / 2 - SIDE / 2,
 	if (vert->yes != NULL) {
 		drawVertex(vert->yes, x + w, y + step, x, y, step);
 	}
+}
+
+void makeDotFile(statementVertex *root, tFile *dest) {
+	dest->tStartMapping(2 * totalVertices(root) * STR_LEN);
+
+	dest->tWriteLine("digraph AKINATOR {");
+
+	tList<statementVertex*> queue;
+
+	queue.tAddLast(root);
+	while (queue.tGetSize() != 0) {
+		statementVertex *curr = queue.tGet(0);
+		queue.tRemove(0);
+
+		if (curr == NULL) {
+			continue;
+		}
+
+		dest->tWriteLine(curr->statement);
+
+		queue.tAddLast(curr->yes);
+		queue.tAddLast(curr->no);
+
+	}
+
+	queue.tAddLast(root);
+	while (queue.tGetSize() != 0) {
+		statementVertex *curr = queue.tGet(0);
+		queue.tRemove(0);
+
+		if (curr == NULL) {
+			continue;
+		}
+
+		if (curr->no != NULL) {
+			dest->tWrite(curr->statement);
+			dest->tWrite("->");
+			dest->tWrite(curr->no->statement);
+			dest->tWriteLine(";");
+		}
+		if (curr->yes != NULL) {
+			dest->tWrite(curr->statement);
+			dest->tWrite("->");
+			dest->tWriteLine(curr->yes->statement);
+			dest->tWriteLine(";");
+		}
+
+		queue.tAddLast(curr->yes);
+		queue.tAddLast(curr->no);
+
+	}
+
+	dest->tWriteLine("}");
+
+	dest->tStopMapping();
 }
 
 void draw(statementVertex *root) {
@@ -426,6 +489,15 @@ void runAkinator() {
 		}
 		if (op == 't') {
 			txDestroyWindow();
+		}
+		if (op == 'w') {
+			cout << FILE_NAME << "\n";
+			char *name = new char[STR_LEN];
+			tReadLine(name, STR_LEN);
+			tFile *in = new tFile(name);
+			makeDotFile(root, in);
+			delete in;
+			delete name;
 		}
 	}
 }
