@@ -161,6 +161,14 @@ public:
 		return tGet_p(tGetPointer(pos));
 	}
 
+	T& tGetFirstElement() {
+		return tGetElement(tGetFirst());
+	}
+
+	T& tGetLastElement() {
+		return tGetElement(tGetLast());
+	}
+
 	// Gives quantity of elements stored in this list.
 	unsigned tGetSize() {
 		return size;
@@ -220,9 +228,9 @@ public:
 		size--;
 	}
 
-	void tForEach(void (*consumer)(const T & elem)) {
+	void tForEach(void (*consumer)(const T &elem)) {
 		for (unsigned node = tGetFirst(); node != 0; node = tGetNext(node)) {
-			const T & elem = tGetElement(node);
+			const T &elem = tGetElement(node);
 			consumer(elem);
 		}
 	}

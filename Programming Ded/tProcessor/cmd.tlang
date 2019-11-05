@@ -136,6 +136,8 @@ T_PROC_FUNC(jne, 51, {
 			IF (a != b) THEN (
 				JMP(ARG1)
 			)
+			
+			//cout << a << " " << b << "\n";
 		})
 // One arg: calls target with location given in the parameter. Saves stacktrace.	
 // If argument quantity is not 1 then exception will be throwen.

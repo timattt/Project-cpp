@@ -12,37 +12,12 @@ void tThrowException(const char *message);
 template<typename T> void tCopyBuffers(const T *from, T *to, unsigned length);
 int tSymbolsCount(const char *line, char symb);
 int tGetFileSize(const char *name);
-int tStrlen(const char *str);
 int tStrcmp(const char *str1, const char *str2, int size);
 
 template<typename A, typename B> struct tPair {
 	A x;
 	B y;
 };
-
-void tReadLine(char * dest, unsigned len = 99999999) {
-	if (len == 99999999) {
-		len = tStrlen(dest);
-	}
-	for (unsigned i = 0; i < len; i++) {
-		dest[i] = '\0';
-	}
-	char c = 0;
-	std::cout.flush();
-	for (unsigned i = 0; ; i++) {
-		if (i == len) {
-			realloc(dest, i + 1);
-			len = i + 1;
-		}
-		c = getchar();
-		if (c == '\n') {
-			dest[i] = '\0';
-			break;
-		}
-		dest[i] = c;
-	}
-	std::cout.flush();
-}
 
 char tReadCharFromLine() {
 	std::cout.flush();
@@ -77,54 +52,13 @@ template<typename T = int> T tBinpow(T a, T n) {
 }
 
 //! Returns minimum of a and b.
-int tMin(int a, int b) {
+template<typename T = int> T tMin(T a, T b) {
 	return (a < b ? a : b);
 }
 
 //! Returns minimum of a and b.
-int tMax(int a, int b) {
-	return (a < b ? b : a);
-}
-
-char** tParse(const char *text, unsigned text_length, const char *bad_symbols,
-		unsigned total_bad_symbols, unsigned &total) {
-
-	char **result = (char**) calloc(text_length, sizeof(char*));
-
-	unsigned total_ = 0;
-
-	auto is_bad = [](char symb, const char *bad, unsigned total_bad_symbols) {
-		for (unsigned i = 0; i < total_bad_symbols; i++) {
-			if (symb == bad[i]) {
-				return 1;
-			}
-		}
-
-		return 0;
-	};
-
-	for (unsigned beg = 0, end = 0; beg < text_length;
-			beg++, end = std::max(end, beg)) {
-
-		if (is_bad(text[beg], bad_symbols, total_bad_symbols)) {
-			continue;
-		}
-
-		while (end < text_length
-				&& !is_bad(text[end], bad_symbols, total_bad_symbols)) {
-			end++;
-		}
-
-		result[total_] = (char*) calloc(end - beg, sizeof(char));
-		tCopyBuffers(text + beg, result[total_], end - beg);
-
-		total_++;
-		beg = end;
-
-	}
-
-	total = total_;
-	return result;
+template<typename T = int> T tMax(T a, T b) {
+	return (b < a ? a : b);
 }
 
 template<typename T> bool tCompare(const T *a, const T *b, unsigned len) {
@@ -144,26 +78,10 @@ void tAssert(bool val) {
 	}
 }
 
-//!Compares two strings if variable size is initialized then comparation will be done size times.
-//!Else comparation is continue until one string reachs its end.
-int tStrcmp(const char *str1, const char *str2, int size = -1) {
-	if (str1 == NULL || str2 == NULL) {
-		tThrowException("Something is null!");
+template<typename T> void tFill(T * arr, T templ, unsigned len) {
+	for (unsigned i = 0; i < len; i++) {
+		arr[i] = templ;
 	}
-
-	if (size < 0) {
-		size = tMin(tStrlen(str1), tStrlen(str2));
-	}
-	for (unsigned i = 0; i < (unsigned) size; i++) {
-		if (str1[i] < str2[i]) {
-			return -1;
-		}
-		if (str1[i] > str2[i]) {
-			return 1;
-		}
-	}
-
-	return 0;
 }
 
 template<typename T> void tSwap(T &a, T &b) {
@@ -205,40 +123,12 @@ template<typename T> void tCopyBuffers(const T *from, T *to, unsigned length) {
 	}
 }
 
-//!Gives quantity of symbols in this text.
-int tSymbolsCount(const char *line, char symb) {
-	tAssert(line != NULL);
-	if (!line) {
-		return 0;
-	}
-
-	int result = 0;
-	for (int i = 0; line[i]; i++) {
-		if (line[i] == symb) {
-			result++;
-		}
-	}
-
-	return result;
-}
-
 //!Gives file size in bytes.
 int tGetFileSize(const char *name) {
 	tAssert(name != NULL);
 	WIN32_FIND_DATA data = { };
 	FindFirstFileA(name, &data);
 	return data.nFileSizeLow;
-}
-
-//!Gives quantity of chars in this char array.
-int tStrlen(const char *str) {
-	if (str == NULL) {
-		tThrowException("Line is NULL!");
-	}
-	const char *s = str;
-	for (; *s; s++)
-		;
-	return s - str;
 }
 
 }

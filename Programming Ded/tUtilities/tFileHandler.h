@@ -4,6 +4,7 @@
 #include <windows.h>
 #include <bits/stdc++.h>
 #include "tUtilities.h"
+#include "tString.h"
 
 using namespace tUtilities;
 
@@ -53,16 +54,12 @@ public:
 	//! Writes given line.
 	//! If length is initialized then uses only first [length] symbols.
 	//! If not then uses tStrlen() function.
-	void tWriteLine(const char *line, unsigned length = 0) {
-		unsigned len = 0;
-		if (line == NULL
-				|| mapped_buffer + sizeBytes
-						< curr_map_byte
-								+ (len = (length == 0 ? tStrlen(line) : length))) {
+	void tWriteLine(tString line) {
+		if (mapped_buffer + sizeBytes < curr_map_byte + line.size) {
 			tThrowException("Can not write line!");
 		}
-		tCopyBuffers(line, curr_map_byte, len);
-		curr_map_byte += len;
+		tCopyBuffers(line.string, curr_map_byte, line.size);
+		curr_map_byte += line.size;
 
 		tWritec('\n');
 	}
@@ -70,16 +67,12 @@ public:
 	//! Writes given line. But without '\n'
 	//! If length is initialized then uses only first [length] symbols.
 	//! If not then uses tStrlen() function.
-	void tWrite(const char *line, unsigned length = 0) {
-		unsigned len = 0;
-		if (line == NULL
-				|| mapped_buffer + sizeBytes
-						< curr_map_byte
-								+ (len = (length == 0 ? tStrlen(line) : length))) {
+	void tWrite(tString line) {
+		if (mapped_buffer + sizeBytes < curr_map_byte + line.size) {
 			tThrowException("Can not write line!");
 		}
-		tCopyBuffers(line, curr_map_byte, len);
-		curr_map_byte += len;
+		tCopyBuffers(line.string, curr_map_byte, line.size);
+		curr_map_byte += line.size;
 	}
 
 	//! Writes any symbol to current byte.
@@ -103,6 +96,24 @@ public:
 
 	tFile(const char *name_) :
 			name(name_), file_handle(INVALID_HANDLE_VALUE), file_mapping_handle(
+			INVALID_HANDLE_VALUE), mapped_buffer(NULL), curr_map_byte(NULL), sizeBytes(
+					0) {
+		if (name == NULL) {
+			tThrowException("Name is NULL!");
+		}
+
+		file_handle = CreateFileA(name, GENERIC_READ | GENERIC_WRITE,
+		FILE_SHARE_WRITE, NULL,
+		OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+
+		if (file_handle == INVALID_HANDLE_VALUE) {
+			tThrowException("Invalid file handle!");
+		}
+
+	}
+
+	tFile(tString name_) :
+			name(name_.tToPlainArray()), file_handle(INVALID_HANDLE_VALUE), file_mapping_handle(
 			INVALID_HANDLE_VALUE), mapped_buffer(NULL), curr_map_byte(NULL), sizeBytes(
 					0) {
 		if (name == NULL) {
@@ -237,7 +248,7 @@ public:
 
 	//! This function returns pointer to begin of this line which is located in mapped memory.
 	//! And it gives it length.
-	char* tReadLine(unsigned &length) {
+	tString tReadLine() {
 		if (!tHasMoreSymbs()) {
 			tThrowException("Out of file range!");
 		}
@@ -250,14 +261,19 @@ public:
 						&& *curr_map_byte != '\r'; curr_map_byte++, curlength++)
 			;
 
-		length = curlength;
 		while (curr_map_byte < mapped_buffer + sizeBytes
 				&& (*curr_map_byte == '\r' || *curr_map_byte == '\n'
 						|| *curr_map_byte == '\0')) {
 			curr_map_byte++;
 		}
 
-		return beg;
+		tString result = { };
+
+
+
+		result.tSet(beg, curlength);
+
+		return result;
 	}
 };
 

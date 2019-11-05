@@ -5,6 +5,7 @@
 #include "../tUtilities/tFileHandler.h"
 #include "../tStorage/tStack.h"
 #include "bits/stdc++.h"
+#include "../tUtilities/tString.h"
 
 using namespace tFileHandler;
 using namespace tStorage;
@@ -44,13 +45,13 @@ const unsigned VRAM_SIZE = SCREEN_WIDTH * SCREEN_HEIGHT * BYTES_PER_PIXEL;
 const unsigned PIXEL_SIDE = 5;
 
 // Gives address for given symbolic value of the register.
-char tGetRegisterIndex(const char *args, unsigned len) {
-	if (args == NULL || len < 2) {
+char tGetRegisterIndex(tString args) {
+	if (args.size < 2) {
 		tThrowException("Arguments are NULL!");
 	}
 
-	char s1 = args[0];
-	char s2 = args[1];
+	char s1 = args.tGetc(0);
+	char s2 = args.tGetc(1);
 
 	// If bp is register
 	if (s1 == 'b' && s2 == 'p') {
@@ -228,7 +229,7 @@ public:
 		PROCESSOR_TYPE constant_pointers[MAX_ARGS];
 
 		// Setting BP register to be right after code in RAM and ensure there will be space for 2 parameters.
-		regs[(unsigned) tGetRegisterIndex("bp", 2)] = 0;
+		regs[(unsigned) tGetRegisterIndex(tString("bp"))] = 0;
 
 		// Starting main loop of the invocation
 		// Invocation will be stopped ONLY WHEN CARRIAGE IS STANDING RIGHT IN THE END OF THE CODE.
@@ -245,9 +246,12 @@ public:
 #include "tStandartUndefs.h"
 #undef T_PROC_FUNC
 
+
 			if (func == NULL) {
 				continue;
 			}
+
+			//nm.out();
 
 			// Reading byte where quantity of arguments is stored.
 			unsigned total_args = (unsigned) (tGetc());
@@ -294,37 +298,34 @@ public:
 };
 
 // Generates map where all targets in this source file are stored.
-map<string, unsigned>* tGenJmpsLib(tFile *src) {
+map<tString, unsigned>* tGenJmpsLib(tFile *src) {
 	if (src == NULL) {
 		tThrowException("Source code file is NULL!");
 	}
-	map<string, unsigned> *result = new map<string, unsigned>;
-
-	unsigned line_length = 0;
-	char *line = NULL;
+	map<tString, unsigned> *result = new map<tString, unsigned>;
 
 	while (src->tHasMoreSymbs()) {
-		line = src->tReadLine(line_length);
-
-		for (unsigned len = 0; len < line_length; len++) {
-			if (line[len] == ':') {
+		tString line = src->tReadLine();
+		for (unsigned len = 0; len < line.size; len++) {
+			if ((line)[len] == ':') {
 				unsigned total_divs = 0;
-				char **divs = tParse(line, line_length, SRC_IGNORE_SYMBS,
+				tString *divs = line.tParse(SRC_IGNORE_SYMBS,
 						SRC_IGNORE_SYMBS_QUANT, total_divs);
 
 				if (divs == NULL || total_divs < 1
-						|| tStrlen(divs[total_divs - 1]) == 0) {
+						|| divs[total_divs - 1].size == 0) {
 					tThrowException(
 							"Compilation error! Something is wrong with jmps!");
 				}
 
-				divs[total_divs - 1][tStrlen(divs[total_divs - 1]) - 1] = '\0';
-				(*result)[divs[total_divs - 1]] = src->tGetCurrentByte();
+				(*result)[divs[total_divs - 1].tSubstring(0,
+						divs[total_divs - 1].size - 2)] = src->tGetCurrentByte();
+
+				delete divs;
 
 				break;
 			}
 		}
-
 	}
 
 	return result;
@@ -335,57 +336,54 @@ void tCompile(tFile *source, tFile *exe) {
 		tThrowException("Something went wrong!");
 	}
 
-	// Line
-	unsigned line_length = 0;
-	char *line = NULL;
-
 	// File init
 	source->tStartMapping();
 	exe->tStartMapping(2 * tGetFileSize(source->tGetName()));
 
 	// Jumps library
-	list<pair<string, unsigned>> jmp_later;
-	map<string, unsigned> *jmp_points = tGenJmpsLib(source);
+	list<pair<tString, unsigned>> jmp_later;
+	map<tString, unsigned> *jmp_points = tGenJmpsLib(source);
 
 	// Ensuring end. target is in this file.
-	(*jmp_points)["end."] = 1;
+	(*jmp_points)[tString("end.")] = 1;
 
 	source->tFlip();
 
 	while (source->tHasMoreSymbs()) {
-		line = source->tReadLine(line_length);
-
+		tString line = source->tReadLine();
 		unsigned total_divs = 0;
-
-		char **divs = tParse(line, line_length, SRC_IGNORE_SYMBS,
-				SRC_IGNORE_SYMBS_QUANT, total_divs);
+		tString *divs = line.tParse(SRC_IGNORE_SYMBS, SRC_IGNORE_SYMBS_QUANT,
+				total_divs);
 
 		// Checking if it is jump
 		for (unsigned i = 0; i < total_divs; i++) {
 			// double dot index :
-			unsigned dd_index = tStrlen(divs[i]) - 1;
-			if (divs[i][dd_index] == ':') {
-				divs[i][dd_index] = '\0';
+			unsigned dd_index = divs[i].size - 1;
+			if (divs[i].tGetc(dd_index) == ':') {
+				tString cutted = divs[i].tSubstring(0, dd_index - 1);
 
-				(*jmp_points)[string(divs[i])] = exe->tGetCurrentByte();
+				(*jmp_points)[cutted] = exe->tGetCurrentByte();
 
-				//delete divs;
+				delete divs;
 				total_divs = 0;
 				break;
 			}
 		}
 
 		if (total_divs < 1) {
-			continue;
-		}
-
-		if (tStrlen(divs[0]) > 1 && divs[0][0] == '/' && divs[0][1] == '/') {
 			delete divs;
 			continue;
 		}
+
+		if (divs[0].size > 1 && divs[0].tGetc(0) == '/'
+				&& divs[0].tGetc(1) == '/') {
+			delete divs;
+			continue;
+		}
+
 		int id = -1;
 
-#define T_PROC_FUNC(NAME, ID, CODE) if (!tStrcmp(divs[0], #NAME, tStrlen(#NAME))) {id = ID;}
+#define T_PROC_FUNC(NAME, ID, CODE) if (divs[0] == tString(#NAME)) {id = ID;}
 #include "tStandartDefs.h"
 #include "cmd.tlang"
 #include "tStandartUndefs.h"
@@ -401,18 +399,17 @@ void tCompile(tFile *source, tFile *exe) {
 
 		// Writing quantity of parameters
 		exe->tWritec((char) (total_divs - 1));
-
 		for (unsigned i = 1; i < total_divs; i++) {
+
 			char isRam = 0;
-			if (divs[i][0] == '[' && divs[i][tStrlen(divs[i]) - 1] == ']') {
+			if (divs[i].tGetc(0) == '['
+					&& divs[i].tGetc(divs[i].size - 1) == ']') {
 				isRam = (char) (127);
 
-				divs[i][tStrlen(divs[i]) - 1] = '\0';
-				divs[i]++;
+				divs[i] = divs[i].tSubstring(1, divs[i].size - 1);
 			}
 
-			char address = (
-					(tStrlen(divs[i]) > 1) ? tGetRegisterIndex(divs[i], 2) : -1);
+			char address = (divs[i].size > 1 ? tGetRegisterIndex(divs[i]) : -1);
 
 			exe->tWritec(isRam);
 
@@ -423,19 +420,20 @@ void tCompile(tFile *source, tFile *exe) {
 				// Writing type of argument. In this case there will be 4 bytes after.
 				exe->tWritec((char) (0));
 
-				if ((*jmp_points).count((string) divs[i]) > 0) {
-					pair<string, unsigned> p = { (string) divs[i],
+				if ((*jmp_points).count(divs[i]) > 0) {
+					pair<tString, unsigned> p = { divs[i],
 							exe->tGetCurrentByte() };
 					jmp_later.push_back(p);
 					exe->tMovePointer(4);
 					continue;
 				}
+
 				PROCESSOR_TYPE value = 0;
 				if (typeid(PROCESSOR_TYPE) == typeid(int)) {
-					value = std::atoi(divs[i]);
+					value = divs[i].tToInt();
 				}
 				if (typeid(PROCESSOR_TYPE) == typeid(float)) {
-					value = std::atof(divs[i]);
+					value = divs[i].tToFloat();
 				}
 				tWriteBytes<PROCESSOR_TYPE>(value, exe->tGetCurrentPointer());
 				exe->tMovePointer(4);
@@ -443,16 +441,16 @@ void tCompile(tFile *source, tFile *exe) {
 			}
 
 		}
-		//delete divs;
+
+		delete divs;
 	}
 
-	(*jmp_points)["end."] = exe->tGetCurrentByte();
+	(*jmp_points)[tString("end.")] = exe->tGetCurrentByte();
 	exe->tWritec((char) 0);
 
 	while (!jmp_later.empty()) {
-		pair<string, unsigned> p = jmp_later.front();
+		pair<tString, unsigned> p = jmp_later.front();
 		jmp_later.pop_front();
-
 		int address = (*jmp_points)[p.first];
 		unsigned byte = p.second;
 

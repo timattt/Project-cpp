@@ -35,25 +35,25 @@ unsigned STR_LEN = 20;
 class statementVertex {
 
 public:
-	char *statement;
+	tString statement;
 
 	statementVertex *no;
 	statementVertex *yes;
 
 	statementVertex() :
-			statement(NULL), no(NULL), yes(NULL) {
+			statement( { }), no(NULL), yes(NULL) {
 	}
 
-	statementVertex(char *st) :
+	statementVertex(tString st) :
 			statement(st), no(NULL), yes(NULL) {
 	}
 
-	statementVertex(char *st, char *yes_, char *no_) :
+	statementVertex(tString st, char *yes_, char *no_) :
 			statement(st), no(new statementVertex(no_)), yes(
 					new statementVertex(yes_)) {
 	}
 
-	statementVertex(char *st, char *yes_) :
+	statementVertex(tString st, char *yes_) :
 			statement(st), no(NULL), yes(new statementVertex(yes_)) {
 	}
 
@@ -67,9 +67,6 @@ public:
 		}
 		if (yes != NULL) {
 			delete yes;
-		}
-		if (statement != NULL) {
-			delete statement;
 		}
 	}
 
@@ -92,15 +89,11 @@ statementVertex* load(tFile *file) {
 	statementVertex **verts = (statementVertex**) calloc(maxVerts,
 			sizeof(statementVertex*));
 
-	unsigned len = 0;
-	file->tReadLine(len);
+	file->tReadLine();
 
 	for (unsigned i = 0; i < maxVerts; i++) {
-		char *line = file->tReadLine(len);
-		char *copy = new char[len + 1];
-		copy[len] = '\0';
-		tCopyBuffers(line, copy, len);
-		verts[i] = new statementVertex(copy);
+		tString line = file->tReadLine();
+		verts[i] = new statementVertex(line);
 	}
 
 	result = verts[0];
@@ -192,7 +185,7 @@ void save(tFile *dest, statementVertex *vert) {
 
 	tWriteBytes(i, dest->tGetBuffer());
 
-	dest->tWrite("#####");
+	dest->tWrite(tString("#####"));
 
 	queue.tAddLast(vert);
 	while (queue.tGetSize() != 0) {
@@ -233,44 +226,49 @@ void save(tFile *dest, statementVertex *vert) {
 void guess(statementVertex *&root) {
 	if (root == NULL) {
 		cout << NEW_OBJECT << "\n";
-		char *obj = new char[STR_LEN];
+		tString obj = { };
 
-		tReadLine(obj, STR_LEN);
+		obj.tReadLine();
 
 		statementVertex *vert = new statementVertex(obj);
 		root = vert;
 		return;
 	} else if (root->isLeaf()) {
-		cout << GUESS << root->statement << "?\n";
+		cout << GUESS;
+		root->statement.tWrite();
+		cout << "?\n";
 		cout << Y_OR_N << "\n";
 		if (tReadCharFromLine() == 'y') {
 			cout << WIN << "\n";
 		} else {
 			cout << NEW_OBJECT << "\n";
 
-			char *obj = new char[STR_LEN];
-			tReadLine(obj, STR_LEN);
+			tString obj = { };
+			obj.tReadLine();
 
-			cout << DIFF << obj << AND << root->statement << "\n";
+			cout << DIFF;
+			obj.tWrite();
+			cout << AND;
+			root->statement.tWrite();
+			cout << "\n";
 
-			char *dif = new char[STR_LEN];
-			tReadLine(dif, STR_LEN);
+			tString dif;
+			dif.tReadLine();
 
 			statementVertex *vert = new statementVertex(dif);
 			statementVertex *yes = new statementVertex(obj);
-			char *copy = new char[tStrlen(root->statement) + 1];
-			copy[tStrlen(root->statement)] = '\0';
-			tCopyBuffers(root->statement, copy, tStrlen(root->statement));
-			statementVertex *no = new statementVertex(copy);
+			statementVertex *no = new statementVertex(root->statement);
 
-			//delete root;
+			delete root;
 
 			vert->yes = yes;
 			vert->no = no;
 			root = vert;
 		}
 	} else {
-		cout << QUESTION << root->statement << "\n";
+		cout << QUESTION;
+		root->statement.tWrite();
+		cout << "\n";
 		cout << Y_OR_N << "\n";
 		if (tReadCharFromLine() == 'y') {
 			guess(root->yes);
@@ -281,10 +279,10 @@ void guess(statementVertex *&root) {
 }
 
 //! Finds node with given statement.
-statementVertex* find(statementVertex *&root, char *name) {
+statementVertex* find(statementVertex *&root, tString name) {
 	if (root != NULL) {
 		if (root->isLeaf()) {
-			return (tStrcmp(root->statement, name) == 0 ? root : NULL);
+			return (!(root->statement == name) ? root : NULL);
 		} else {
 			statementVertex *x = find(root->no, name);
 			statementVertex *y = find(root->yes, name);
@@ -296,33 +294,33 @@ statementVertex* find(statementVertex *&root, char *name) {
 }
 
 //! Gives properties of given object.
-void definition(char *name, unsigned len, statementVertex *&root,
-		tList<const tPair<char*, bool>> *stacktrc = NULL) {
+void definition(tString name, statementVertex *&root,
+		tList<const tPair<tString, bool>> *stacktrc = NULL) {
 	bool created = 0;
 	if (stacktrc == NULL) {
-		stacktrc = new tList<const tPair<char*, bool>>();
+		stacktrc = new tList<const tPair<tString, bool>>();
 		created = 1;
 	}
 	if (root != NULL) {
 		if (root->isLeaf()) {
-			if (tStrcmp(root->statement, name, len) == 0) {
-				cout << name << DEFIN << "\n";
-				stacktrc->tForEach([](const tPair<char*, bool> &elem) {
+			if (!(root->statement == name)) {
+				name.tWrite();
+				cout << DEFIN << "\n";
+				stacktrc->tForEach([](const tPair<tString, bool> &elem) {
 					if (!elem.y) {
 						cout << DEFIN_NO;
 					}
-					if (elem.x != NULL) {
-						cout << elem.x << "\n";
-					}
+					elem.x.tWrite();
+					cout << "\n";
 				});
 			}
 		} else {
 			stacktrc->tAddLast( { root->statement, 1 });
-			definition(name, len, root->yes, stacktrc);
+			definition(name, root->yes, stacktrc);
 			stacktrc->tRemoveLast();
 
 			stacktrc->tAddLast( { root->statement, 0 });
-			definition(name, len, root->no, stacktrc);
+			definition(name, root->no, stacktrc);
 			stacktrc->tRemoveLast();
 		}
 	}
@@ -348,7 +346,7 @@ void drawLines(statementVertex *vert, unsigned x = WIDTH / 2 - SIDE / 2,
 	txSetColor(RGB(0, 0, 127));
 	txLine(SIDE / 2 + x, SIDE / 2 + y, SIDE / 2 + px, SIDE / 2 + py);
 
-	unsigned w = x / 2;
+	unsigned w = (x % (WIDTH / 2)) / 2;
 	if (vert->no != NULL) {
 		drawLines(vert->no, x - w, y + step, x, y, step);
 	}
@@ -373,10 +371,16 @@ void drawVertex(statementVertex *vert, unsigned x = WIDTH / 2 - SIDE / 2,
 	txRectangle(SIDE / 2 + x - SIDE / 2, SIDE / 2 + y - SIDE / 2,
 			SIDE / 2 + x + SIDE / 2, SIDE / 2 + y + SIDE / 2);
 	txSetColor(RGB(127, 0, 0));
-	txDrawText(SIDE / 2 + x - SIDE / 2, SIDE / 2 + y - SIDE / 2,
-			SIDE / 2 + x + SIDE / 2, SIDE / 2 + y + SIDE / 2, vert->statement);
 
-	unsigned w = x / 2;
+	char tmp[200];
+
+	tFill<char>(tmp, 0, 200);
+	tCopyBuffers(vert->statement.string, tmp, vert->statement.size);
+
+	txDrawText(SIDE / 2 + x - SIDE / 2, SIDE / 2 + y - SIDE / 2,
+			SIDE / 2 + x + SIDE / 2, SIDE / 2 + y + SIDE / 2, tmp);
+
+	unsigned w = (x % (WIDTH / 2)) / 2;
 	if (vert->no != NULL) {
 		drawVertex(vert->no, x - w, y + step, x, y, step);
 	}
@@ -440,8 +444,13 @@ void makeDotFile(statementVertex *root, tFile *dest) {
 	dest->tStopMapping();
 }
 
+bool txCreated = 0;
+
 void draw(statementVertex *root) {
-	txCreateWindow(WIDTH, HEIGHT, 1);
+	if (!txCreated) {
+		txCreateWindow(WIDTH, HEIGHT, 1);
+		txCreated = 1;
+	}
 	txSetColor(RGB(127, 127, 127));
 	txSelectFont("Times new roman", SIDE / 5 * 2);
 	drawLines(root);
@@ -449,40 +458,42 @@ void draw(statementVertex *root) {
 }
 
 void runAkinator() {
+	__tNewBranch();
+
 	statementVertex *root = NULL;
 
 	char op = 0;
-	while (op != 'e') {
+	while (1) {
 		cout << WHAT_TO_DO << "\n";
 
 		op = tReadCharFromLine();
+		if (op == 'e') {
+			break;
+		}
 		if (op == 'g') {
 			guess(root);
 		}
 		if (op == 'd') {
 			cout << DEF_NAME << "\n";
-			char *name = new char[STR_LEN];
-			tReadLine(name, STR_LEN);
-			definition(name, tStrlen(name), root);
-			delete name;
+			tString name = { };
+			name.tReadLine();
+			definition(name, root);
 		}
 		if (op == 's') {
 			cout << FILE_NAME << "\n";
-			char *name = new char[STR_LEN];
-			tReadLine(name, STR_LEN);
+			tString name = { };
+			name.tReadLine();
 			tFile *out = new tFile(name);
 			save(out, root);
 			delete out;
-			delete name;
 		}
 		if (op == 'l') {
 			cout << FILE_NAME << "\n";
-			char *name = new char[STR_LEN];
-			tReadLine(name, STR_LEN);
+			tString name = { };
+			name.tReadLine();
 			tFile *in = new tFile(name);
 			root = load(in);
 			delete in;
-			delete name;
 		}
 		if (op == 'p') {
 			draw(root);
@@ -492,14 +503,15 @@ void runAkinator() {
 		}
 		if (op == 'w') {
 			cout << FILE_NAME << "\n";
-			char *name = new char[STR_LEN];
-			tReadLine(name, STR_LEN);
+			tString name = { };
+			name.tReadLine();
 			tFile *in = new tFile(name);
 			makeDotFile(root, in);
 			delete in;
-			delete name;
 		}
 	}
+
+	__tFlushBranch();
 }
 
 #endif
