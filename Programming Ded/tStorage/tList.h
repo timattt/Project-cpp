@@ -201,18 +201,23 @@ public:
 	}
 
 	// Removes element from pos position from start.
-	void tRemove(unsigned pos) {
+	T tRemove(unsigned pos) {
 		if (size == 0) {
 			tThrowException("Size is zero!");
 		}
+		T elem = tGet(tGetPointer(pos));
 		tRemove_p(tGetPointer(pos));
+		return elem;
 	}
 
-	void tRemoveLast() {
+	T tRemoveLast() {
 		if (size == 0) {
 			tThrowException("Out of bounds!");
 		}
+		T last = tGetLastElement();
 		tRemove(size - 1);
+
+		return last;
 	}
 
 	// Removes element from node with given pointer.
@@ -226,6 +231,18 @@ public:
 		tDeleteNode(node);
 
 		size--;
+	}
+
+	void tOut() {
+		std::cout << "[";
+		for (unsigned i = 0; i < size; i++) {
+			std::cout << tGet(i);
+			if (i + 1 < size) {
+				std::cout << ", ";
+			}
+		}
+		std::cout << "]\n";
+		std::cout.flush();
 	}
 
 	void tForEach(void (*consumer)(const T &elem)) {

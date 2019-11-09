@@ -1,0 +1,30 @@
+#ifdef OPERATION
+OPERATION('+', {
+	return &(dl + dr);
+})
+OPERATION('*', {
+	return &(dl*cr+cl*dr);
+})
+OPERATION('/', {
+	return &( (dl * cr + num(-1) * dr * cl) / (cr*cr) );
+})
+OPERATION('^', {
+	double pow = r.num_value;
+	return &(num(pow) * pow(cl, num(pow - 1)) * dl);
+})
+#endif
+
+#ifdef FUNCTION
+FUNCTION(sin, {
+	return &(func(cos, cr) * dr);
+})
+FUNCTION(cos, {
+	return &(num(-1)*func(sin, cr) * dr);
+})
+#endif
+
+#ifdef VARIABLE
+VARIABLE(x, {
+	return (vars.tContains("x") ? &num(1) : &num(0));
+})
+#endif

@@ -16,10 +16,7 @@ public:
 
 	//! Puts element into this hash table. You can give length to byte array. But if not then tStrlen
 	//! function will be used to determine it.
-	void tAdd(const char *elem, unsigned sz = 1234567899) {
-		if (sz == 1234567899) {
-			sz = tStrlen(elem);
-		}
+	void tAdd(const char *elem, unsigned sz) {
 		unsigned hs = hash(elem, sz);
 		core[hs % size].tAddLast( { elem, sz });
 	}
