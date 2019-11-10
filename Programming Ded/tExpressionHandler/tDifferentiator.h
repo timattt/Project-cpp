@@ -63,7 +63,7 @@ unsigned chouseOperation(tString val) {
 			continue;
 		}
 #define OPERATION(SYMB, DIFF_CODE, CODE_CALC) if (val[i] == SYMB) {points[i] = brackets; min_br = tMin(min_br, brackets);}
-#include "NodeConstructor"
+#include "../tExpressionHandler/NodeConstructor"
 #undef OPERATION
 
 	}
@@ -78,7 +78,7 @@ unsigned chouseOperation(tString val) {
 #define OPERATION(SYMB, DIFF_CODE, CODE_CALC) for (unsigned i = 0; i < best_ops.tGetSize(); i++) {\
 	if (val[best_ops.tGet(i)] == SYMB) {return best_ops.tGet(i);}\
 	}
-#include "NodeConstructor"
+#include "../tExpressionHandler/NodeConstructor"
 #undef OPERATION
 
 	return val.size;
@@ -86,11 +86,11 @@ unsigned chouseOperation(tString val) {
 
 unsigned FREE_ID = 0;
 
-class tDiffNode {
+class tExprNode {
 public:
 	// Children
-	tDiffNode *left;
-	tDiffNode *right;
+	tExprNode *left;
+	tExprNode *right;
 
 	// Value
 	tString value;
@@ -102,26 +102,26 @@ public:
 	// Id for dot constructor
 	unsigned id = FREE_ID++;
 
-	tDiffNode() :
+	tExprNode() :
 			left(NULL), right(NULL), value(tString('0')), num_value(0), type(
 					constant) {
 	}
 
-	tDiffNode(double val) :
+	tExprNode(double val) :
 			left(NULL), right(NULL), value(tString(val)), num_value(val), type(
 					constant) {
 	}
 
-	tDiffNode(char type_, tDiffNode *l, tDiffNode *r) :
+	tExprNode(char type_, tExprNode *l, tExprNode *r) :
 			left(l), right(r), value(tString(type_)), num_value(0), type(
 					operation) {
 	}
 
-	tDiffNode(tString name, tDiffNode *arg) :
+	tExprNode(tString name, tExprNode *arg) :
 			left(NULL), right(arg), value(name), num_value(0), type(function) {
 	}
 
-	tDiffNode(tString val) :
+	tExprNode(tString val) :
 			left(NULL), right(NULL), value(), num_value(0), type(none) {
 		// Cropping brackets
 		val = cropBrackets(val);
@@ -136,11 +136,11 @@ if (type == none && val.tIsPrefix(#NAME)) {\
 	value = {#NAME};\
 	arg = val.tCrop('(', ')');\
 }
-#include "NodeConstructor"
+#include "../tExpressionHandler/NodeConstructor"
 #undef FUNCTION
 
 		if (type != none) {
-			right = new tDiffNode(arg);
+			right = new tExprNode(arg);
 			return;
 		}
 
@@ -150,8 +150,8 @@ if (type == none && val.tIsPrefix(#NAME)) {\
 			value = { val[pos] };
 			type = operation;
 			tString *divs = val.tDivide(pos);
-			left = new tDiffNode(divs[0]);
-			right = new tDiffNode(divs[1]);
+			left = new tExprNode(divs[0]);
+			right = new tExprNode(divs[1]);
 			return;
 		}
 
@@ -160,7 +160,7 @@ if (type == none && val.tIsPrefix(#NAME)) {\
 	type = variable;\
 	value = {#NAME};\
 }
-#include "NodeConstructor"
+#include "../tExpressionHandler/NodeConstructor"
 #undef VARIABLE
 
 		if (type != none) {
@@ -173,7 +173,7 @@ if (type == none && val.tIsPrefix(#NAME)) {\
 		type = constant;
 	}
 
-	~tDiffNode() {
+	~tExprNode() {
 		if (left != NULL) {
 			delete left;
 		}
@@ -217,8 +217,8 @@ if (type == none && val.tIsPrefix(#NAME)) {\
 	}
 
 	//! This function copy this vertex and the entire subtree of this vertex
-	tDiffNode* tCopy() {
-		tDiffNode *result = new tDiffNode();
+	tExprNode* tCopy() {
+		tExprNode *result = new tExprNode();
 		result->type = type;
 		result->value = value;
 		result->num_value = num_value;
@@ -246,15 +246,15 @@ if (type == none && val.tIsPrefix(#NAME)) {\
 		double res = 0;
 
 #define OPERATION(SYMB, CODE_D, CODE_C) if (value == SYMB) {CODE_C;}
-#include "NodeConstructor"
+#include "../tExpressionHandler/NodeConstructor"
 #undef OPERATION
 
 #define FUNCTION(NAME, CODE_D, CODE_C) if (value == tString(#NAME)) {CODE_C;}
-#include "NodeConstructor"
+#include "../tExpressionHandler/NodeConstructor"
 #undef FUNCTION
 
 #define VARIABLE(NAME, CODE_D, CODE_C) if (value == tString(#NAME)) {CODE_C;}
-#include "NodeConstructor"
+#include "../tExpressionHandler/NodeConstructor"
 #undef VARIABLE
 
 		if (type == constant) {
@@ -358,16 +358,16 @@ if (type == none && val.tIsPrefix(#NAME)) {\
 	}
 };
 
-tDiffNode& operator+(tDiffNode &a, tDiffNode &b) {
-	return *new tDiffNode('+', &a, &b);
+tExprNode& operator+(tExprNode &a, tExprNode &b) {
+	return *new tExprNode('+', &a, &b);
 }
 
-tDiffNode& operator*(tDiffNode &a, tDiffNode &b) {
-	return *new tDiffNode('*', &a, &b);
+tExprNode& operator*(tExprNode &a, tExprNode &b) {
+	return *new tExprNode('*', &a, &b);
 }
 
-tDiffNode& operator/(tDiffNode &a, tDiffNode &b) {
-	return *new tDiffNode('/', &a, &b);
+tExprNode& operator/(tExprNode &a, tExprNode &b) {
+	return *new tExprNode('/', &a, &b);
 }
 
 //! This function cleans the equation tree by
@@ -376,8 +376,8 @@ tDiffNode& operator/(tDiffNode &a, tDiffNode &b) {
 //! 2. Replace this node with nonnull child if it is sum and one child is NULL. (x + 0 -> x)
 //! 3. If it is multiplication and one child is 1 then it is replaced with other child. (x * 1 -> x)
 //! 4. If it is pow and power is 1 then it is replaced with other child. (x^1 -> x)
-unsigned tCleanup(tDiffNode *&node) {
-	tDiffNode *todelete = NULL;
+unsigned tCleanup(tExprNode *&node) {
+	tExprNode *todelete = NULL;
 
 	unsigned total = 0;
 
@@ -387,11 +387,11 @@ unsigned tCleanup(tDiffNode *&node) {
 	if (node->isOperation('*')) {
 		if (node->left != NULL && node->left->isZero()) {
 			COL_GARB
-			node = new tDiffNode();
+			node = new tExprNode();
 		}
 		if (node->right != NULL && node->right->isZero()) {
 			COL_GARB
-			node = new tDiffNode();
+			node = new tExprNode();
 		}
 	}
 
@@ -449,7 +449,7 @@ unsigned tCleanup(tDiffNode *&node) {
 }
 
 //! This function converts the equation tree into the language format DOT.
-void tConvertToDot(tDiffNode *node, tFile *dest, bool init = 1) {
+void tConvertToDot(tExprNode *node, tFile *dest, bool init = 1) {
 	if (init) {
 		dest->tStartMapping(2000);
 		dest->tWriteLine("digraph graphname {");
@@ -484,7 +484,7 @@ void tConvertToDot(tDiffNode *node, tFile *dest, bool init = 1) {
 }
 
 //! Converts node tree into dot format and convert it to image.
-void tSaveDotImage(tString imgName, tDiffNode *node) {
+void tSaveDotImage(tString imgName, tExprNode *node) {
 	tString fileName = { "TEMP_DOT_SAVE" };
 	DeleteFileA("TEMP_DOT_SAVE");
 	tFile *fl = new tFile(fileName);
@@ -496,7 +496,7 @@ void tSaveDotImage(tString imgName, tDiffNode *node) {
 
 //! This function differentiate given in node tree equation.
 //! Differentiation is carried out according to the variables that are stored in the string.
-tDiffNode* tDifferentiate(tDiffNode *node, tString vars) {
+tExprNode* tDifferentiate(tExprNode *node, tString vars) {
 
 	// These all is to make access from Node constructor easier
 #define l (*node->left)
@@ -511,25 +511,25 @@ tDiffNode* tDifferentiate(tDiffNode *node, tString vars) {
 
 	switch (node->type) {
 	case constant:
-		return new tDiffNode();
+		return new tExprNode();
 	case operation:
 
 #define OPERATION(SYMB, CODE, CODE_C) if (node->value == SYMB) {CODE;}
-#include "NodeConstructor"
+#include "../tExpressionHandler/NodeConstructor"
 #undef OPERATION
 
 		break;
 	case function:
 
 #define FUNCTION(NAME, CODE, CODE_C) if (node->value == tString(#NAME)) {CODE;}
-#include "NodeConstructor"
+#include "../tExpressionHandler/NodeConstructor"
 #undef FUNCTION
 
 		break;
 	case variable:
 
 #define VARIABLE(NAME, CODE, CODE_C) if (node->value == tString(#NAME)) {CODE;}
-#include "NodeConstructor"
+#include "../tExpressionHandler/NodeConstructor"
 #undef VARIABLE
 
 		break;
