@@ -158,14 +158,9 @@ if (type == none && val.tIsPrefix(#NAME)) {\
 		}
 
 		// VARIABLE
-#define VARIABLE(NAME) if (type == none && val == tString(#NAME)) {\
-	type = variable;\
-	value = {#NAME};\
-}
-#include "../tExpressionHandler/NodeConstructor"
-#undef VARIABLE
-
-		if (type != none) {
+		if (!val.tHasOnlyNumbers()) {
+			type = variable;
+			value = val;
 			return;
 		}
 
@@ -183,182 +178,162 @@ if (type == none && val.tIsPrefix(#NAME)) {\
 			delete right;
 		}
 	}
+};
 
-	bool isOperation(char c) const {
-		return (type == operation) && (value == c);
-	}
-
-	bool isFunction() const {
-		return (type == function);
-	}
-
-	bool isConstant() const {
-		return (type == constant);
-	}
-
-	bool isZero() const {
-		return (type == constant) && (num_value == 0);
-	}
-
-	bool isOne() const {
-		return (type == constant) && (num_value == 1);
-	}
-
-	bool isPolynomial() {
-		if (isOperation('+')) {
-			return 1;
-		}
-		if (left != NULL && left->isPolynomial()) {
-			return 1;
-		}
-		if (right != NULL && right->isPolynomial()) {
-			return 1;
-		}
-
+bool isOperation(tExprNode *node, char c) {
+	if (node == NULL) {
 		return 0;
 	}
+	return (node->type == operation) && (node->value == c);
+}
 
-	//! This function copy this vertex and the entire subtree of this vertex
-	tExprNode* tCopy() {
-		tExprNode *result = new tExprNode();
-		result->type = type;
-		result->value = value;
-		result->num_value = num_value;
-		if (left != NULL) {
-			result->left = this->left->tCopy();
-		}
-		if (right != NULL) {
-			result->right = this->right->tCopy();
-		}
-		return result;
+bool isFunction(tExprNode *node) {
+	if (node == NULL) {
+		return 0;
+	}
+	return (node->type == function);
+}
+
+bool isConstant(tExprNode *node) {
+	if (node == NULL) {
+		return 0;
+	}
+	return (node->type == constant);
+}
+
+bool isZero(tExprNode *node) {
+	if (node == NULL) {
+		return 0;
+	}
+	return (node->type == constant) && (node->num_value == 0);
+}
+
+bool isOne(tExprNode *node) {
+	if (node == NULL) {
+		return 0;
+	}
+	return (node->type == constant) && (node->num_value == 1);
+}
+
+bool isPolynomial(tExprNode *node) {
+	if (node == NULL) {
+		return 0;
+	}
+	if (isOperation(node, '+')) {
+		return 1;
+	}
+	if (isPolynomial(node->left)) {
+		return 1;
+	}
+	if (isPolynomial(node->right)) {
+		return 1;
 	}
 
-	//! This function substitutes the value of the
-	//! variables and calculates the numerical value of the expression that represents this tree.
-	double tCalc(map<tString, double> vars) {
-		double l = 0;
-		double r = 0;
-		if (left != NULL) {
-			l = left->tCalc(vars);
-		}
-		if (right != NULL) {
-			r = right->tCalc(vars);
-		}
+	return 0;
+}
 
-		double res = 0;
-
-#define OPERATION(SYMB, CODE_D, CODE_C) if (value == SYMB) {CODE_C;}
-#include "../tExpressionHandler/NodeConstructor"
-#undef OPERATION
-
-#define FUNCTION(NAME, CODE_D, CODE_C) if (value == tString(#NAME)) {CODE_C;}
-#include "../tExpressionHandler/NodeConstructor"
-#undef FUNCTION
-
-#define VARIABLE(NAME) if (value == tString(#NAME)) {res = vars[tString(#NAME)];}
-#include "../tExpressionHandler/NodeConstructor"
-#undef VARIABLE
-
-		if (type == constant) {
-			res = num_value;
-		}
-
-		return res;
+//! This function constructs the line on which this tree was built.
+tString tToTexString(tExprNode *node) {
+	if (node == NULL) {
+		return {};
 	}
-
-	//! This function constructs the line on which this tree was built.
-	tString tToTexString() const {
-		tString result = { };
-		if (left != NULL) {
-			if (type == operation && value != '+' && value != '/'
-					&& left->isPolynomial()) {
-				result += '(';
-			}
-			if (isOperation('/')) {
-				result += tString("\\frac{");
-			}
-			result += left->tToTexString();
-			if (type == operation && value != '+' && value != '/'
-					&& left->isPolynomial()) {
-				result += ')';
-			}
-			if (isOperation('/')) {
-				result += '}';
-			}
+	tString result = { };
+	if (node->left != NULL) {
+		if (node->type == operation && node->value != '+' && node->value != '/'
+				&& isPolynomial(node->left)) {
+			result += '(';
 		}
-		if (type == constant) {
-			result += tString(num_value).tRemoveFractTail();
-			if (num_value < 0) {
-				result = tString('(') + result + ')';
-			}
-		} else {
-			if (value != '/') {
-				result += tString(value);
-			}
+		if (isOperation(node, '/')) {
+			result += tString("\\frac{");
 		}
-		if (right != NULL) {
-			if (type == operation && value != '+' && value != '/'
-					&& right->isPolynomial()) {
-				result += '(';
-			}
-			if (isOperation('/')) {
-				result += '{';
-			}
-			if (isFunction()) {
-				result += tString('(');
-			}
-			result += right->tToTexString();
-			if (isFunction()) {
-				result += tString(')');
-			}
-			if (isOperation('/')) {
-				result += '}';
-			}
-			if (type == operation && value != '+' && value != '/'
-					&& right->isPolynomial()) {
-				result += ')';
-			}
+		result += tToTexString(node->left);
+		if (node->type == operation && node->value != '+' && node->value != '/'
+				&& isPolynomial(node->left)) {
+			result += ')';
 		}
-		return result;
+		if (isOperation(node, '/')) {
+			result += '}';
+		}
 	}
-	//! This function constructs the line on which this tree was built.
-	tString tToString() const {
-		tString result = { };
-		if (left != NULL) {
-			if (type == operation && value != '+' && left->isPolynomial()) {
-				result += '(';
-			}
-			result += left->tToString();
-			if (type == operation && value != '+' && left->isPolynomial()) {
-				result += ')';
-			}
+	if (node->type == constant) {
+		result += tString(node->num_value).tRemoveFractTail();
+		if (node->num_value < 0) {
+			result = tString('(') + result + ')';
 		}
-		if (type == constant) {
-			result += tString(num_value).tRemoveFractTail();
-			if (num_value < 0) {
-				result = tString('(') + result + ')';
-			}
-		} else {
-			result += tString(value);
+	} else {
+		if (node->value != '/') {
+			result += tString(node->value);
 		}
-		if (right != NULL) {
-			if (type == operation && value != '+' && right->isPolynomial()) {
-				result += '(';
-			}
-			if (isFunction()) {
-				result += tString('(');
-			}
-			result += right->tToString();
-			if (isFunction()) {
-				result += tString(')');
-			}
-			if (type == operation && value != '+' && right->isPolynomial()) {
-				result += ')';
-			}
-		}
-		return result;
 	}
-};
+	if (node->right != NULL) {
+		if (node->type == operation && node->value != '+' && node->value != '/'
+				&& isPolynomial(node->right)) {
+			result += '(';
+		}
+		if (isOperation(node, '/')) {
+			result += '{';
+		}
+		if (isFunction(node)) {
+			result += tString('(');
+		}
+		result += tToTexString(node->right);
+		if (isFunction(node)) {
+			result += tString(')');
+		}
+		if (isOperation(node, '/')) {
+			result += '}';
+		}
+		if (node->type == operation && node->value != '+' && node->value != '/'
+				&& isPolynomial(node->right)) {
+			result += ')';
+		}
+	}
+	return result;
+}
+//! This function constructs the line on which this tree was built.
+tString tToString(tExprNode *node) {
+	if (node == NULL) {
+		return {};
+	}
+	tString result = { };
+	if (node->left != NULL) {
+		if (node->type == operation && node->value != '+'
+				&& isPolynomial(node->left)) {
+			result += '(';
+		}
+		result += tToString(node->left);
+		if (node->type == operation && node->value != '+'
+				&& isPolynomial(node->left)) {
+			result += ')';
+		}
+	}
+	if (node->type == constant) {
+		result += tString(node->num_value).tRemoveFractTail();
+		if (node->num_value < 0) {
+			result = tString('(') + result + ')';
+		}
+	} else {
+		result += tString(node->value);
+	}
+	if (node->right != NULL) {
+		if (node->type == operation && node->value != '+'
+				&& isPolynomial(node->right)) {
+			result += '(';
+		}
+		if (isFunction(node)) {
+			result += tString('(');
+		}
+		result += tToString(node->right);
+		if (isFunction(node)) {
+			result += tString(')');
+		}
+		if (node->type == operation && node->value != '+'
+				&& isPolynomial(node->right)) {
+			result += ')';
+		}
+	}
+	return result;
+}
 
 tExprNode& operator+(tExprNode &a, tExprNode &b) {
 	return *new tExprNode('+', &a, &b);
@@ -372,16 +347,34 @@ tExprNode& operator/(tExprNode &a, tExprNode &b) {
 	return *new tExprNode('/', &a, &b);
 }
 
-void tFindAllVariables(tExprNode *node, tString &dest) {
+void tFindAllVariables(tExprNode *node, tList<tString> *dest) {
 	if (node == NULL) {
 		return;
 	}
-	if (node->type == variable && (dest.tContains(node->value) == 0)) {
-		dest += node->value;
+	if (node->type == variable && (!dest->tContains(node->value))) {
+		dest->tAddLast(node->value);
 	}
 
 	tFindAllVariables(node->left, dest);
 	tFindAllVariables(node->right, dest);
+}
+
+//! This function copy this vertex and the entire subtree of this vertex
+tExprNode* tCopy(tExprNode *node) {
+	if (node == NULL) {
+		return NULL;
+	}
+	tExprNode *result = new tExprNode();
+	result->type = node->type;
+	result->value = node->value;
+	result->num_value = node->num_value;
+	if (node->left != NULL) {
+		result->left = tCopy(node->left);
+	}
+	if (node->right != NULL) {
+		result->right = tCopy(node->right);
+	}
+	return result;
 }
 
 //! This function cleans the equation tree by
@@ -398,50 +391,50 @@ unsigned tCleanup(tExprNode *&node) {
 #define COL_GARB todelete = node; total++;
 
 	// 1.
-	if (node->isOperation('*')) {
-		if (node->left != NULL && node->left->isZero()) {
+	if (isOperation(node, '*')) {
+		if (isZero(node->left)) {
 			COL_GARB
 			node = new tExprNode();
 		}
-		if (node->right != NULL && node->right->isZero()) {
+		if (isZero(node->right)) {
 			COL_GARB
 			node = new tExprNode();
 		}
 	}
 
 	// 2.
-	if (node->isOperation('+')) {
-		if (node->left != NULL && node->left->isZero()) {
+	if (isOperation(node, '+')) {
+		if (isZero(node->left)) {
 			COL_GARB
-			node = node->right->tCopy();
+			node = tCopy(node->right);
 		}
-		if (node->right != NULL && node->right->isZero()) {
+		if (isZero(node->right)) {
 			COL_GARB
-			node = node->left->tCopy();
+			node = tCopy(node->left);
 		}
 	}
 
 	// 3.
-	if (node->isOperation('*')) {
-		if (node->left != NULL && node->left->isOne()) {
+	if (isOperation(node, '*')) {
+		if (isOne(node->left)) {
 			COL_GARB
-			node = node->right->tCopy();
+			node = tCopy(node->right);
 		}
-		if (node->right != NULL && node->right->isOne()) {
+		if (isOne(node->right)) {
 			COL_GARB
-			node = node->left->tCopy();
+			node = tCopy(node->left);
 		}
 	}
 
 	// 4.
-	if (node->isOperation('^')) {
-		if (node->left != NULL && node->left->isOne()) {
+	if (isOperation(node, '^')) {
+		if (isOne(node->left)) {
 			COL_GARB
-			node = node->right->tCopy();
+			node = tCopy(node->right);
 		}
-		if (node->right != NULL && node->right->isOne()) {
+		if (isOne(node->right)) {
 			COL_GARB
-			node = node->left->tCopy();
+			node = tCopy(node->left);
 		}
 	}
 
@@ -508,17 +501,54 @@ void tSaveDotImage(tString imgName, tExprNode *node) {
 	DeleteFileA("TEMP_DOT_SAVE");
 }
 
+//! This function substitutes the value of the
+//! variables and calculates the numerical value of the expression that represents this tree.
+double tCalc(tExprNode *node, map<tString, double> vars) {
+	if (node == NULL) {
+		return 0;
+	}
+	double l = 0;
+	double r = 0;
+
+	l = tCalc(node->left, vars);
+	r = tCalc(node->right, vars);
+
+	double res = 0;
+
+	if (node->type == operation) {
+#define OPERATION(SYMB, CODE_D, CODE_C) if (node->value == SYMB) {CODE_C;}
+#include "../tExpressionHandler/NodeConstructor"
+#undef OPERATION
+	}
+	if (node->type == function) {
+#define FUNCTION(NAME, CODE_D, CODE_C) if (node->value == tString(#NAME)) {CODE_C;}
+#include "../tExpressionHandler/NodeConstructor"
+#undef FUNCTION
+	}
+	if (node->type == variable) {
+		res = vars[node->value];
+	}
+	if (node->type == constant) {
+		res = node->num_value;
+	}
+
+	return res;
+}
+
 //! This function differentiate given in node tree equation.
-//! Differentiation is carried out according to the variables that are stored in the string.
-tExprNode* tDifferentiate(tExprNode *node, tString vars) {
+//! Differentiation is carried out according to the variable that is stored in the string.
+tExprNode* tDifferentiate(tExprNode *node, tString var) {
+	if (node == NULL) {
+		return NULL;
+	}
 
 	// These all is to make access from Node constructor easier
 #define l (*node->left)
 #define r (*node->right)
-#define dl (*tDifferentiate(&l, vars))
-#define dr (*tDifferentiate(&r, vars))
-#define cl (*l.tCopy())
-#define cr (*r.tCopy())
+#define dl (*tDifferentiate(&l, var))
+#define dr (*tDifferentiate(&r, var))
+#define cl (*tCopy(&l))
+#define cr (*tCopy(&r))
 #define num(A) (*new tExprNode(A))
 #define pow(A, B) (*(new tExprNode('^', &A, &B)))
 #define func(A, B) (*(new tExprNode(tString(#A), &B)))
@@ -541,12 +571,7 @@ tExprNode* tDifferentiate(tExprNode *node, tString vars) {
 
 		break;
 	case variable:
-
-#define VARIABLE(NAME) if (node->value == tString(#NAME)) {return (vars.tContains(#NAME) ? &num(1) : &num(0));;}
-#include "../tExpressionHandler/NodeConstructor"
-#undef VARIABLE
-
-		break;
+		return ((var == node->value) ? &num(1) : &num(0));
 	case none:
 		break;
 	}

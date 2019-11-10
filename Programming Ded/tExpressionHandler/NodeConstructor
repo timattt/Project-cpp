@@ -22,12 +22,3 @@ FUNCTION(cos, {
 	return &(num(-1)*func(sin, cr) * dr);
 }, {res = std::cos(r);})
 #endif
-
-#ifdef VARIABLE
-VARIABLE(x)
-VARIABLE(y)
-VARIABLE(z)
-VARIABLE(t)
-VARIABLE(a)
-VARIABLE(b)
-#endif

@@ -245,6 +245,16 @@ public:
 		std::cout.flush();
 	}
 
+	bool tContains(T & elem) {
+		for (unsigned i = 0; i < size; i++) {
+			if (tGet(i) == elem) {
+				return 1;
+			}
+		}
+
+		return 0;
+	}
+
 	void tForEach(void (*consumer)(const T &elem)) {
 		for (unsigned node = tGetFirst(); node != 0; node = tGetNext(node)) {
 			const T &elem = tGetElement(node);

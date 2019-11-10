@@ -111,7 +111,7 @@ public:
 	//! Example: 3.345000000 -> 3.345
 	//! Example: 00000 -> 0
 	tString tRemoveFractTail() {
-		tString str = {*this};
+		tString str = { *this };
 		unsigned i = size - 1;
 		for (; i > 0 && string[i] == string[size - 1]; i--) {
 		}
@@ -239,6 +239,16 @@ public:
 				return 0;
 			}
 		}
+		return 1;
+	}
+
+	bool tHasOnlyNumbers() {
+		for (unsigned i = 0; i < size; i++) {
+			if (!(string[i] >= '0' && string[i] <= '9')) {
+				return 0;
+			}
+		}
+
 		return 1;
 	}
 
