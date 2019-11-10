@@ -8,6 +8,8 @@
 
 using namespace tFileHandler;
 
+namespace tExpressionHandler {
+
 enum nodeType {
 	none, operation, constant, function, variable
 };
@@ -156,7 +158,7 @@ if (type == none && val.tIsPrefix(#NAME)) {\
 		}
 
 		// VARIABLE
-#define VARIABLE(NAME, DIFF_CODE, CODE_CALC) if (type == none && val == tString(#NAME)) {\
+#define VARIABLE(NAME) if (type == none && val == tString(#NAME)) {\
 	type = variable;\
 	value = {#NAME};\
 }
@@ -253,7 +255,7 @@ if (type == none && val.tIsPrefix(#NAME)) {\
 #include "../tExpressionHandler/NodeConstructor"
 #undef FUNCTION
 
-#define VARIABLE(NAME, CODE_D, CODE_C) if (value == tString(#NAME)) {CODE_C;}
+#define VARIABLE(NAME) if (value == tString(#NAME)) {res = vars[tString(#NAME)];}
 #include "../tExpressionHandler/NodeConstructor"
 #undef VARIABLE
 
@@ -368,6 +370,18 @@ tExprNode& operator*(tExprNode &a, tExprNode &b) {
 
 tExprNode& operator/(tExprNode &a, tExprNode &b) {
 	return *new tExprNode('/', &a, &b);
+}
+
+void tFindAllVariables(tExprNode *node, tString &dest) {
+	if (node == NULL) {
+		return;
+	}
+	if (node->type == variable && (dest.tContains(node->value) == 0)) {
+		dest += node->value;
+	}
+
+	tFindAllVariables(node->left, dest);
+	tFindAllVariables(node->right, dest);
 }
 
 //! This function cleans the equation tree by
@@ -505,9 +519,9 @@ tExprNode* tDifferentiate(tExprNode *node, tString vars) {
 #define dr (*tDifferentiate(&r, vars))
 #define cl (*l.tCopy())
 #define cr (*r.tCopy())
-#define num(A) (*new tDiffNode(A))
-#define pow(A, B) (*(new tDiffNode('^', &A, &B)))
-#define func(A, B) (*(new tDiffNode(tString(#A), &B)))
+#define num(A) (*new tExprNode(A))
+#define pow(A, B) (*(new tExprNode('^', &A, &B)))
+#define func(A, B) (*(new tExprNode(tString(#A), &B)))
 
 	switch (node->type) {
 	case constant:
@@ -528,7 +542,7 @@ tExprNode* tDifferentiate(tExprNode *node, tString vars) {
 		break;
 	case variable:
 
-#define VARIABLE(NAME, CODE, CODE_C) if (node->value == tString(#NAME)) {CODE;}
+#define VARIABLE(NAME) if (node->value == tString(#NAME)) {return (vars.tContains(#NAME) ? &num(1) : &num(0));;}
 #include "../tExpressionHandler/NodeConstructor"
 #undef VARIABLE
 
@@ -548,6 +562,8 @@ tExprNode* tDifferentiate(tExprNode *node, tString vars) {
 #undef func
 
 	return NULL;
+}
+
 }
 
 #endif

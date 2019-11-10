@@ -11,7 +11,7 @@ OPERATION('/', {
 OPERATION('^', {
 	double pow = r.num_value;
 	return &(num(pow) * pow(cl, num(pow - 1)) * dl);
-}, {res = tBinpow(l, (int)r);})
+}, {res = std::pow(l, r);})
 #endif
 
 #ifdef FUNCTION
@@ -24,7 +24,10 @@ FUNCTION(cos, {
 #endif
 
 #ifdef VARIABLE
-VARIABLE(x, {
-	return (vars.tContains("x") ? &num(1) : &num(0));
-}, {res = vars[tString("x")];})
+VARIABLE(x)
+VARIABLE(y)
+VARIABLE(z)
+VARIABLE(t)
+VARIABLE(a)
+VARIABLE(b)
 #endif
