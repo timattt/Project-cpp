@@ -1,30 +1,30 @@
 #ifdef OPERATION
 OPERATION('+', {
 	return &(dl + dr);
-})
+}, {res = l + r;})
 OPERATION('*', {
 	return &(dl*cr+cl*dr);
-})
+}, {res = l * r;})
 OPERATION('/', {
 	return &( (dl * cr + num(-1) * dr * cl) / (cr*cr) );
-})
+}, {res = l / r;})
 OPERATION('^', {
 	double pow = r.num_value;
 	return &(num(pow) * pow(cl, num(pow - 1)) * dl);
-})
+}, {res = tBinpow(l, (int)r);})
 #endif
 
 #ifdef FUNCTION
 FUNCTION(sin, {
 	return &(func(cos, cr) * dr);
-})
+}, {res = std::sin(r);})
 FUNCTION(cos, {
 	return &(num(-1)*func(sin, cr) * dr);
-})
+}, {res = std::cos(r);})
 #endif
 
 #ifdef VARIABLE
 VARIABLE(x, {
 	return (vars.tContains("x") ? &num(1) : &num(0));
-})
+}, {res = vars[tString("x")];})
 #endif

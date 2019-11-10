@@ -40,7 +40,7 @@ public:
 } __mem__;
 }
 
-template<typename T = int> T tBinpow(T a, T n) {
+template<typename T = int, typename K = int> T tBinpow(K a, T n) {
 	T res = 1;
 	while (n) {
 		if (n & 1)

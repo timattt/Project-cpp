@@ -1,8 +1,12 @@
 #ifndef T_DIFFERENCIATOR
 #define T_DIFFERENCIATOR
 
+#include <map>
+
+#include "../tUtilities/tFileHandler.h"
 #include "../tUtilities/tString.h"
-#include "../tStorage/tList.h"
+
+using namespace tFileHandler;
 
 enum nodeType {
 	none, operation, constant, function, variable
@@ -58,7 +62,7 @@ unsigned chouseOperation(tString val) {
 			brackets--;
 			continue;
 		}
-#define OPERATION(SYMB, DIFF_CODE) if (val[i] == SYMB) {points[i] = brackets; min_br = tMin(min_br, brackets);}
+#define OPERATION(SYMB, DIFF_CODE, CODE_CALC) if (val[i] == SYMB) {points[i] = brackets; min_br = tMin(min_br, brackets);}
 #include "NodeConstructor"
 #undef OPERATION
 
@@ -71,7 +75,7 @@ unsigned chouseOperation(tString val) {
 		}
 	}
 
-#define OPERATION(SYMB, DIFF_CODE) for (unsigned i = 0; i < best_ops.tGetSize(); i++) {\
+#define OPERATION(SYMB, DIFF_CODE, CODE_CALC) for (unsigned i = 0; i < best_ops.tGetSize(); i++) {\
 	if (val[best_ops.tGet(i)] == SYMB) {return best_ops.tGet(i);}\
 	}
 #include "NodeConstructor"
@@ -80,25 +84,37 @@ unsigned chouseOperation(tString val) {
 	return val.size;
 }
 
+unsigned FREE_ID = 0;
+
 class tDiffNode {
 public:
+	// Children
 	tDiffNode *left;
 	tDiffNode *right;
 
+	// Value
 	tString value;
 	double num_value;
+
+	// Type
 	nodeType type;
 
+	// Id for dot constructor
+	unsigned id = FREE_ID++;
+
 	tDiffNode() :
-			left(NULL), right(NULL), value(tString('0')), num_value(0), type(constant) {
+			left(NULL), right(NULL), value(tString('0')), num_value(0), type(
+					constant) {
 	}
 
 	tDiffNode(double val) :
-			left(NULL), right(NULL), value(tString(val)), num_value(val), type(constant) {
+			left(NULL), right(NULL), value(tString(val)), num_value(val), type(
+					constant) {
 	}
 
 	tDiffNode(char type_, tDiffNode *l, tDiffNode *r) :
-			left(l), right(r), value(tString(type_)), num_value(0), type(operation) {
+			left(l), right(r), value(tString(type_)), num_value(0), type(
+					operation) {
 	}
 
 	tDiffNode(tString name, tDiffNode *arg) :
@@ -114,7 +130,7 @@ public:
 		tString arg = { };
 
 		// FUNCTION
-#define FUNCTION(NAME, DIFF_CODE) \
+#define FUNCTION(NAME, DIFF_CODE, CODE_CALC) \
 if (type == none && val.tIsPrefix(#NAME)) {\
 	type = function; \
 	value = {#NAME};\
@@ -140,7 +156,7 @@ if (type == none && val.tIsPrefix(#NAME)) {\
 		}
 
 		// VARIABLE
-#define VARIABLE(NAME, DIFF_CODE) if (type == none && val == tString(#NAME)) {\
+#define VARIABLE(NAME, DIFF_CODE, CODE_CALC) if (type == none && val == tString(#NAME)) {\
 	type = variable;\
 	value = {#NAME};\
 }
@@ -166,6 +182,26 @@ if (type == none && val.tIsPrefix(#NAME)) {\
 		}
 	}
 
+	bool isOperation(char c) const {
+		return (type == operation) && (value == c);
+	}
+
+	bool isFunction() const {
+		return (type == function);
+	}
+
+	bool isConstant() const {
+		return (type == constant);
+	}
+
+	bool isZero() const {
+		return (type == constant) && (num_value == 0);
+	}
+
+	bool isOne() const {
+		return (type == constant) && (num_value == 1);
+	}
+
 	//! This function copy this vertex and the entire subtree of this vertex
 	tDiffNode* tCopy() {
 		tDiffNode *result = new tDiffNode();
@@ -181,18 +217,87 @@ if (type == none && val.tIsPrefix(#NAME)) {\
 		return result;
 	}
 
-	void tOut() const {
-		std::cout << "Node type:" << type << " value :[";
-		value.tWrite();
-		std::cout << "]\n";
+	//! This function substitutes the value of the
+	//! variables and calculates the numerical value of the expression that represents this tree.
+	double tCalc(map<tString, double> vars) {
+		double l = 0;
+		double r = 0;
 		if (left != NULL) {
-			left->tOut();
+			l = left->tCalc(vars);
 		}
 		if (right != NULL) {
-			right->tOut();
+			r = right->tCalc(vars);
 		}
+
+		double res = 0;
+
+#define OPERATION(SYMB, CODE_D, CODE_C) if (value == SYMB) {CODE_C;}
+#include "NodeConstructor"
+#undef OPERATION
+
+#define FUNCTION(NAME, CODE_D, CODE_C) if (value == tString(#NAME)) {CODE_C;}
+#include "NodeConstructor"
+#undef FUNCTION
+
+#define VARIABLE(NAME, CODE_D, CODE_C) if (value == tString(#NAME)) {CODE_C;}
+#include "NodeConstructor"
+#undef VARIABLE
+
+		if (type == constant) {
+			res = num_value;
+		}
+
+		return res;
 	}
 
+	//! This function constructs the line on which this tree was built.
+	tString tToTexString() const {
+		tString result = { };
+		if (type == operation) {
+			if (value == '/') {
+				result = { "\\frac{" };
+			} else {
+				result = { '(' };
+			}
+		}
+		if (left != NULL) {
+			result = result + left->tToTexString();
+		}
+		if (value == '/') {
+			result = result + tString("}{");
+		} else {
+			if (type == constant) {
+				result = result + tString((int) (num_value));
+			} else {
+				result = result + tString(value);
+			}
+		}
+		if (right != NULL) {
+			if (type == function) {
+				result = result + tString('(');
+			}
+			if (isOperation('^')) {
+				result = result + tString('{');
+			}
+			result = result + right->tToTexString();
+			if (isOperation('^')) {
+				result = result + tString('}');
+			}
+			if (type == function) {
+				result = result + tString(')');
+			}
+		}
+		if (type == operation) {
+			if (value == '/') {
+				result = result + tString("}");
+			} else {
+				result = result + tString(')');
+			}
+		}
+		return result;
+	}
+
+	//! This function constructs the line on which this tree was built.
 	tString tToString() const {
 		tString result = { };
 		if (type == operation) {
@@ -232,45 +337,126 @@ tDiffNode& operator/(tDiffNode &a, tDiffNode &b) {
 
 //! This function cleans the equation tree by
 //! removing the extra branches that contain either 0 or 1 or other unnecessary data.
-void tCleanup(tDiffNode *&node) {
-	if (node->left != NULL) {
-		tCleanup(node->left);
-	}
-	if (node->right != NULL) {
-		tCleanup(node->right);
-	}
-	if (node->type == constant && node->num_value == 0) {
-		delete node;
-		node = NULL;
-		return;
-	}
-	if (node->type == operation) {
-		if (node->left == NULL || node->right == NULL) {
-			if (node->value == '*') {
-				node = NULL;
-				return;
-			}
-			if (node->value == '+') {
-				node = (node->left == NULL ? node->right : node->left);
-				return;
-			}
-		} else {
-			if (node->value == '*') {
-				if (node->left->num_value == 1) {
-					node = node->right;
-				}
-				if (node->right->num_value == 1) {
-					node = node->left;
-				}
-			}
-			if (node->value == '^') {
-				if (node->right->num_value == 1) {
-					node = node->left;
-				}
-			}
+//! 1. Delete this node if it is multiplication and any child is NULL. (x*0 -> 0)
+//! 2. Replace this node with nonnull child if it is sum and one child is NULL. (x + 0 -> x)
+//! 3. If it is multiplication and one child is 1 then it is replaced with other child. (x * 1 -> x)
+//! 4. If it is pow and power is 1 then it is replaced with other child. (x^1 -> x)
+unsigned tCleanup(tDiffNode *&node) {
+	tDiffNode *todelete = NULL;
+
+	int total = 0;
+
+#define COL_GARB todelete = node; total++;
+
+	// 1.
+	if (node->isOperation('*')) {
+		if (node->left != NULL && node->left->isZero()) {
+			COL_GARB
+			node = new tDiffNode();
+		}
+		if (node->right != NULL && node->right->isZero()) {
+			COL_GARB
+			node = new tDiffNode();
 		}
 	}
 
+	// 2.
+	if (node->isOperation('+')) {
+		if (node->left != NULL && node->left->isZero()) {
+			COL_GARB
+			node = node->right->tCopy();
+		}
+		if (node->right != NULL && node->right->isZero()) {
+			COL_GARB
+			node = node->left->tCopy();
+		}
+	}
+
+	// 3.
+	if (node->isOperation('*')) {
+		if (node->left != NULL && node->left->isOne()) {
+			COL_GARB
+			node = node->right->tCopy();
+		}
+		if (node->right != NULL && node->right->isOne()) {
+			COL_GARB
+			node = node->left->tCopy();
+		}
+	}
+
+	// 4.
+	if (node->isOperation('^')) {
+		if (node->left != NULL && node->left->isOne()) {
+			COL_GARB
+			node = node->right->tCopy();
+		}
+		if (node->right != NULL && node->right->isOne()) {
+			COL_GARB
+			node = node->left->tCopy();
+		}
+	}
+
+#undef COL_GARB
+
+	// Deleting trash
+	if (todelete != NULL) {
+		delete todelete;
+	}
+
+	if (node->left != NULL) {
+		total += tCleanup(node->left);
+	}
+	if (node->right != NULL) {
+		total += tCleanup(node->right);
+	}
+
+	return total;
+}
+
+//! This function converts the equation tree into the language format DOT.
+void tConvertToDot(tDiffNode *node, tFile *dest, bool init = 1) {
+	if (init) {
+		dest->tStartMapping(2000);
+		dest->tWriteLine("digraph graphname {");
+	}
+	dest->tWrite("vrt");
+	dest->tWriteNum<unsigned>(node->id);
+	dest->tWrite("[label=");
+	dest->tWritec('"');
+	dest->tWrite(node->value);
+	dest->tWritec('"');
+	dest->tWriteLine("]");
+	if (node->left != NULL) {
+		dest->tWrite("vrt");
+		dest->tWrite(node->id);
+		dest->tWrite(" -> ");
+		dest->tWrite("vrt");
+		dest->tWriteLine(node->left->id);
+		tConvertToDot(node->left, dest, 0);
+	}
+	if (node->right != NULL) {
+		dest->tWrite("vrt");
+		dest->tWrite(node->id);
+		dest->tWrite(" -> ");
+		dest->tWrite("vrt");
+		dest->tWriteLine(node->right->id);
+		tConvertToDot(node->right, dest, 0);
+	}
+	if (init) {
+		dest->tWriteLine("}");
+		dest->tStopMapping();
+	}
+}
+
+//! Converts node tree into dot format and convert it to image.
+void tSaveDotImage(tString imgName, tDiffNode *node) {
+	tString fileName = { "TEMP_DOT_SAVE" };
+	DeleteFileA("TEMP_DOT_SAVE");
+	tFile *fl = new tFile(fileName);
+	tConvertToDot(node, fl);
+	delete fl;
+	DeleteFileA("TEMP_DOT_SAVE");
+	tCreateDotImg(fileName, imgName);
 }
 
 //! This function differentiate given in node tree equation.
@@ -293,21 +479,21 @@ tDiffNode* tDifferentiate(tDiffNode *node, tString vars) {
 		return new tDiffNode();
 	case operation:
 
-#define OPERATION(SYMB, CODE) if (node->value == SYMB) {CODE;}
+#define OPERATION(SYMB, CODE, CODE_C) if (node->value == SYMB) {CODE;}
 #include "NodeConstructor"
 #undef OPERATION
 
 		break;
 	case function:
 
-#define FUNCTION(NAME, CODE) if (node->value == tString(#NAME)) {CODE;}
+#define FUNCTION(NAME, CODE, CODE_C) if (node->value == tString(#NAME)) {CODE;}
 #include "NodeConstructor"
 #undef FUNCTION
 
 		break;
 	case variable:
 
-#define VARIABLE(NAME, CODE) if (node->value == tString(#NAME)) {CODE;}
+#define VARIABLE(NAME, CODE, CODE_C) if (node->value == tString(#NAME)) {CODE;}
 #include "NodeConstructor"
 #undef VARIABLE
 

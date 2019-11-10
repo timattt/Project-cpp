@@ -10,6 +10,14 @@ using namespace tUtilities;
 
 namespace tFileHandler {
 
+void tCreateDotImg(tString fileName, tString imgName) {
+	tString result = tString("dot -Tpng ") + fileName + tString(" -o ")
+			+ imgName + tString(".png");
+	char *command = result.tToPlainArray();
+	system(command);
+	delete command;
+}
+
 class tFile {
 
 	// Name
@@ -268,8 +276,6 @@ public:
 		}
 
 		tString result = { };
-
-
 
 		result.tSet(beg, curlength);
 
