@@ -202,6 +202,20 @@ if (type == none && val.tIsPrefix(#NAME)) {\
 		return (type == constant) && (num_value == 1);
 	}
 
+	bool isPolynomial() {
+		if (isOperation('+')) {
+			return 1;
+		}
+		if (left != NULL && left->isPolynomial()) {
+			return 1;
+		}
+		if (right != NULL && right->isPolynomial()) {
+			return 1;
+		}
+
+		return 0;
+	}
+
 	//! This function copy this vertex and the entire subtree of this vertex
 	tDiffNode* tCopy() {
 		tDiffNode *result = new tDiffNode();
@@ -253,71 +267,92 @@ if (type == none && val.tIsPrefix(#NAME)) {\
 	//! This function constructs the line on which this tree was built.
 	tString tToTexString() const {
 		tString result = { };
-		if (type == operation) {
-			if (value == '/') {
-				result = { "\\frac{" };
-			} else {
-				result = { '(' };
+		if (left != NULL) {
+			if (type == operation && value != '+' && value != '/'
+					&& left->isPolynomial()) {
+				result += '(';
+			}
+			if (isOperation('/')) {
+				result += tString("\\frac{");
+			}
+			result += left->tToTexString();
+			if (type == operation && value != '+' && value != '/'
+					&& left->isPolynomial()) {
+				result += ')';
+			}
+			if (isOperation('/')) {
+				result += '}';
 			}
 		}
-		if (left != NULL) {
-			result = result + left->tToTexString();
-		}
-		if (value == '/') {
-			result = result + tString("}{");
+		if (type == constant) {
+			result += tString(num_value).tRemoveFractTail();
+			if (num_value < 0) {
+				result = tString('(') + result + ')';
+			}
 		} else {
-			if (type == constant) {
-				result = result + tString((int) (num_value));
-			} else {
-				result = result + tString(value);
+			if (value != '/') {
+				result += tString(value);
 			}
 		}
 		if (right != NULL) {
-			if (type == function) {
-				result = result + tString('(');
+			if (type == operation && value != '+' && value != '/'
+					&& right->isPolynomial()) {
+				result += '(';
 			}
-			if (isOperation('^')) {
-				result = result + tString('{');
+			if (isOperation('/')) {
+				result += '{';
 			}
-			result = result + right->tToTexString();
-			if (isOperation('^')) {
-				result = result + tString('}');
+			if (isFunction()) {
+				result += tString('(');
 			}
-			if (type == function) {
-				result = result + tString(')');
+			result += right->tToTexString();
+			if (isFunction()) {
+				result += tString(')');
 			}
-		}
-		if (type == operation) {
-			if (value == '/') {
-				result = result + tString("}");
-			} else {
-				result = result + tString(')');
+			if (isOperation('/')) {
+				result += '}';
+			}
+			if (type == operation && value != '+' && value != '/'
+					&& right->isPolynomial()) {
+				result += ')';
 			}
 		}
 		return result;
 	}
-
 	//! This function constructs the line on which this tree was built.
 	tString tToString() const {
 		tString result = { };
-		if (type == operation) {
-			result = { '(' };
-		}
 		if (left != NULL) {
-			result = result + left->tToString();
+			if (type == operation && value != '+' && left->isPolynomial()) {
+				result += '(';
+			}
+			result += left->tToString();
+			if (type == operation && value != '+' && left->isPolynomial()) {
+				result += ')';
+			}
 		}
-		result = result + tString(value);
+		if (type == constant) {
+			result += tString(num_value).tRemoveFractTail();
+			if (num_value < 0) {
+				result = tString('(') + result + ')';
+			}
+		} else {
+			result += tString(value);
+		}
 		if (right != NULL) {
-			if (type == function) {
-				result = result + tString('(');
+			if (type == operation && value != '+' && right->isPolynomial()) {
+				result += '(';
 			}
-			result = result + right->tToString();
-			if (type == function) {
-				result = result + tString(')');
+			if (isFunction()) {
+				result += tString('(');
 			}
-		}
-		if (type == operation) {
-			result = result + tString(')');
+			result += right->tToString();
+			if (isFunction()) {
+				result += tString(')');
+			}
+			if (type == operation && value != '+' && right->isPolynomial()) {
+				result += ')';
+			}
 		}
 		return result;
 	}
@@ -344,7 +379,7 @@ tDiffNode& operator/(tDiffNode &a, tDiffNode &b) {
 unsigned tCleanup(tDiffNode *&node) {
 	tDiffNode *todelete = NULL;
 
-	int total = 0;
+	unsigned total = 0;
 
 #define COL_GARB todelete = node; total++;
 
@@ -455,8 +490,8 @@ void tSaveDotImage(tString imgName, tDiffNode *node) {
 	tFile *fl = new tFile(fileName);
 	tConvertToDot(node, fl);
 	delete fl;
-	DeleteFileA("TEMP_DOT_SAVE");
 	tCreateDotImg(fileName, imgName);
+	DeleteFileA("TEMP_DOT_SAVE");
 }
 
 //! This function differentiate given in node tree equation.

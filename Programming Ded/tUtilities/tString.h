@@ -107,6 +107,22 @@ public:
 		tCopyBuffers(str, string, len);
 	}
 
+	//! Removes all zeros from end.
+	//! Example: 3.345000000 -> 3.345
+	//! Example: 00000 -> 0
+	tString tRemoveFractTail() {
+		tString str = {*this};
+		unsigned i = size - 1;
+		for (; i > 0 && string[i] == string[size - 1]; i--) {
+		}
+		if (string[i] == '.') {
+			i--;
+		}
+		str.tResize(i + 1);
+
+		return str;
+	}
+
 	//! Resizes this string to new size and copies data from given array.
 	void tSet(const char *arr, unsigned len) {
 		if (arr == NULL) {
@@ -138,6 +154,14 @@ public:
 		for (unsigned i = 0; i < size; i++) {
 			std::cout << string[i];
 		}
+	}
+
+	void operator+=(tString other) {
+		(*this) = (*this) + other;
+	}
+
+	void operator+=(char c) {
+		(*this) = (*this) + tString(c);
 	}
 
 	tString operator+(tString other) const {
@@ -216,6 +240,13 @@ public:
 			}
 		}
 		return 1;
+	}
+
+	bool operator!=(char c) const {
+		if (size != 1) {
+			return 1;
+		}
+		return c != string[0];
 	}
 
 	bool operator==(const tString &a) const {
