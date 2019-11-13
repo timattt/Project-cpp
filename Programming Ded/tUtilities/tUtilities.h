@@ -22,7 +22,8 @@ template<typename A, typename B> struct tPair {
 char tReadCharFromLine() {
 	std::cout.flush();
 	char c = getchar();
-	while (getchar() != '\n');
+	while (getchar() != '\n')
+		;
 	return c;
 }
 
@@ -49,6 +50,38 @@ template<typename T = int, typename K = int> T tBinpow(K a, T n) {
 		n >>= 1;
 	}
 	return res;
+}
+
+double tFloor(double val) {
+	return (double) ((long long) (val));
+}
+unsigned tGetFirstSignificantDecimalPlace(double val) {
+	if (val == tFloor(val)) {
+		return 0;
+	}
+	unsigned res = 1;
+	long long pow = 10;
+	while ((long long) (val * pow) % 10 == 0) {
+		res++;
+		pow *= 10;
+	}
+
+	return res;
+}
+
+double tCeiling(double val) {
+	double floor = tFloor(val);
+	return (val - floor > 0 ? floor + 1 : floor);
+}
+
+double tRoundTo(double val, unsigned digs) {
+	double pow = std::pow(10, digs);
+	return tFloor(val * pow + 0.5) / pow;
+}
+
+double tRoundToFirstDecimalPlace(double val) {
+	unsigned count = tGetFirstSignificantDecimalPlace(val);
+	return tRoundTo(val, count);
 }
 
 //! Returns minimum of a and b.
@@ -78,7 +111,7 @@ void tAssert(bool val) {
 	}
 }
 
-template<typename T> void tFill(T * arr, T templ, unsigned len) {
+template<typename T> void tFill(T *arr, T templ, unsigned len) {
 	for (unsigned i = 0; i < len; i++) {
 		arr[i] = templ;
 	}

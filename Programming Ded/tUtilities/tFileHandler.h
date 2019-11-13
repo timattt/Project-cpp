@@ -59,6 +59,12 @@ public:
 		}
 	}
 
+	template<typename T> void tWriteNum_fl(T num) {
+		tString str = { num };
+		str = str.tRemoveFractTail();
+		tWrite(str);
+	}
+
 	//! Writes given line.
 	//! If length is initialized then uses only first [length] symbols.
 	//! If not then uses tStrlen() function.
@@ -282,6 +288,21 @@ public:
 		return result;
 	}
 };
+
+void tShrink(tFile *& fl) {
+	unsigned len = fl->tGetCurrentByte();
+	char *buf = new char[len];
+	tCopyBuffers(fl->tGetBuffer(), buf, len);
+	tString name = fl->tGetName();
+	delete fl;
+	char * name_tmp = name.tToPlainArray();
+	DeleteFileA(name_tmp);
+	delete name_tmp;
+	fl = new tFile(name);
+	fl->tStartMapping(len);
+	tCopyBuffers(buf, fl->tGetBuffer(), len);
+	fl->tStopMapping();
+}
 
 }
 

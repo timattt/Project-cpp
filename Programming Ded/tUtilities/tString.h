@@ -113,6 +113,9 @@ public:
 	tString tRemoveFractTail() {
 		tString str = { *this };
 		unsigned i = size - 1;
+		if (string[i] == 'l') {
+			i--;
+		}
 		for (; i > 0 && string[i] == string[size - 1]; i--) {
 		}
 		if (string[i] == '.') {
@@ -242,9 +245,10 @@ public:
 		return 1;
 	}
 
+	//! Return true if string has only numbers AND POINT AND MINUS!
 	bool tHasOnlyNumbers() {
 		for (unsigned i = 0; i < size; i++) {
-			if (!(string[i] >= '0' && string[i] <= '9')) {
+			if (!((string[i] >= '0' && string[i] <= '9') || string[i] == '.' || string[i] == '-')) {
 				return 0;
 			}
 		}
@@ -301,6 +305,23 @@ public:
 				return i;
 			}
 		}
+		return size;
+	}
+
+	unsigned firstPositionStr(tString pattern) {
+		for (unsigned i = 0; i < size; i++) {
+			bool bad = 0;
+			for (unsigned j = 0; (i + j < size) && (j < pattern.size); j++) {
+				if (string[i + j] != pattern.string[j]) {
+					bad = 1;
+					break;
+				}
+			}
+			if (!bad) {
+				return i;
+			}
+		}
+
 		return size;
 	}
 
