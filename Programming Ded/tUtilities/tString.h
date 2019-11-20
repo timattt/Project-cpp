@@ -28,6 +28,10 @@ map<unsigned, char*>* __tCurrentBranch() {
 	return __branches.tGetLastElement();
 }
 
+bool __tIsRunning() {
+	return __branches.tGetSize() > 0;
+}
+
 //! Creates new branch where all new tString objects will be stored.
 void __tNewBranch() {
 	__branches.tAddLast(new map<unsigned, char*>());
@@ -46,6 +50,9 @@ void __tFlushBranch() {
 
 //! Creates char array and store it in current branch. Gives local pointer.
 unsigned __tAllocStr(unsigned sz) {
+	if (!__tIsRunning()) {
+		tThrowException("NO BRANCHES!");
+	}
 	char *str = new char[sz];
 
 	unsigned pointer = free_pointer;
@@ -113,7 +120,7 @@ public:
 	tString tRemoveFractTail() {
 		tString str = { *this };
 		unsigned i = size - 1;
-		if (string[i] == 'l') {
+		if (size > 1 && string[i] == 'l' && string[i - 1] >= '0' && string[i - 1] <= '9') {
 			i--;
 		}
 		for (; i > 0 && string[i] == string[size - 1]; i--) {
@@ -248,7 +255,8 @@ public:
 	//! Return true if string has only numbers AND POINT AND MINUS!
 	bool tHasOnlyNumbers() {
 		for (unsigned i = 0; i < size; i++) {
-			if (!((string[i] >= '0' && string[i] <= '9') || string[i] == '.' || string[i] == '-')) {
+			if (!((string[i] >= '0' && string[i] <= '9') || string[i] == '.'
+					|| string[i] == '-')) {
 				return 0;
 			}
 		}
@@ -373,6 +381,16 @@ public:
 		return 0;
 	}
 
+	tString tCastofSymbol(char c) {
+		tString res = { };
+		for (unsigned i = 0; i < size; i++) {
+			if (string[i] != c) {
+				res = res + string[i];
+			}
+		}
+		return res;
+	}
+
 	bool operator<(const tString &a) const {
 		for (unsigned i = 0; i < tMin<unsigned>(a.size, size); i++) {
 			if (string[i] == a.string[i]) {
@@ -380,8 +398,7 @@ public:
 			}
 			return string[i] < a.string[i];
 		}
-
-		return 0;
+		return size < a.size;
 	}
 
 	char& operator[](int i) const {

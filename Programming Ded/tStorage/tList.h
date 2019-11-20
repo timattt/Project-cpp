@@ -127,6 +127,14 @@ public:
 		tSetUsed(0, 1);
 	}
 
+	tList(T &elem) :
+			mem(NULL), currentCapacity(1), freeElement(1), size(0) {
+		mem = new char[tNodeSize()];
+		tClearNode(0);
+		tSetUsed(0, 1);
+		tAddLast(elem);
+	}
+
 	// Removes holes from this list. And makes it uses minimum memory.
 	void tShrink() {
 		unsigned end = freeElement - 1;
@@ -233,6 +241,10 @@ public:
 		size--;
 	}
 
+	T & operator[](unsigned i) {
+		return tGet(i);
+	}
+
 	void tOut() {
 		std::cout << "[";
 		for (unsigned i = 0; i < size; i++) {
@@ -245,7 +257,7 @@ public:
 		std::cout.flush();
 	}
 
-	bool tContains(T & elem) {
+	bool tContains(T &elem) {
 		for (unsigned i = 0; i < size; i++) {
 			if (tGet(i) == elem) {
 				return 1;
@@ -253,6 +265,14 @@ public:
 		}
 
 		return 0;
+	}
+
+	T* tToArray() {
+		T * array = new T[size];
+		for (unsigned i = 0; i < size; i++) {
+			array[i] = tGet(i);
+		}
+		return array;
 	}
 
 	void tForEach(void (*consumer)(const T &elem)) {

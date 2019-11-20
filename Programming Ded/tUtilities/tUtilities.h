@@ -75,8 +75,13 @@ double tCeiling(double val) {
 }
 
 double tRoundTo(double val, unsigned digs) {
+	if (val == 0.0) {
+		return 0;
+	}
+	double sign = val / abs(val);
+	double val_ = abs(val);
 	double pow = std::pow(10, digs);
-	return tFloor(val * pow + 0.5) / pow;
+	return sign * tFloor(val_ * pow + 0.5) / pow;
 }
 
 double tRoundToFirstDecimalPlace(double val) {
@@ -143,7 +148,11 @@ template<typename T> T& tConvertBytes(char *data) {
 
 //! Just throws exception and tells some information about this class.
 void tThrowException(const char *message = "tException") {
-	throw message;
+	std::cout << "!!!EXCEPTION!!!\n";
+	std::cout << message << "\n";
+	std::cout << "PROGRAM IS TERMINATED!\n";
+	std::cout.flush();
+	exit(-1);
 }
 
 //! Copies one buffer to another.

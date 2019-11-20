@@ -17,12 +17,15 @@ enum nodeType {
 // !This function truncates the extra brackets standing on the
 //! edge so as not to lose other important brackets and the order of constructing the tree is not violated.
 tString cropBrackets(tString val) {
+	// Total brackets to remove from the edge
 	unsigned total_crop = 0;
 
+	// Calculating how many brackets in the begin of string
 	unsigned beg_br = 0;
 	while (val[beg_br] == '(') {
 		beg_br++;
 	}
+	// Calculating how many brackets in the end of string
 	unsigned end_br = val.size - 1;
 	while (val[end_br] == ')') {
 		end_br--;
@@ -30,6 +33,9 @@ tString cropBrackets(tString val) {
 
 	tList<unsigned> open_br = { };
 
+	// Checking all pairs of brackets.
+	// And remove those which are both in begin and end
+	// Example ((..).) => (..).
 	for (unsigned i = 0; i < val.size; i++) {
 		if (val[i] == '(') {
 			open_br.tAddLast(i);
@@ -44,18 +50,22 @@ tString cropBrackets(tString val) {
 		}
 	}
 
+	// Cropping
 	return val.tSubstring(total_crop, val.size - 1 - total_crop);
 }
 
 //! this function selects the desired operation in such a way as not to disrupt their execution order
 //! and correctly build the tree. this function is rather complicated therefore will not be described.
 unsigned chouseOperation(tString val) {
-	// Position of operation symbol and quantity of brackets.
+	// Position of operation symbol and quantity of brackets pairs in which it lies.
 	map<unsigned, unsigned> points;
 
+	// Checking all operation and calculating quantity of brackets for them all.
+	// Example: ((4*7)) => 2 brackets
 	unsigned brackets = 0;
 	unsigned min_br = 10000000;
 	for (unsigned i = 0; i < val.size; i++) {
+		// Correct quantity of brackets
 		if (val[i] == '(') {
 			brackets++;
 			continue;
@@ -64,12 +74,15 @@ unsigned chouseOperation(tString val) {
 			brackets--;
 			continue;
 		}
+
+		// Finding operation
 #define OPERATION(SYMB, DIFF_CODE, CODE_CALC) if (val[i] == SYMB) {points[i] = brackets; min_br = tMin(min_br, brackets);}
 #include "../tExpressionHandler/NodeConstructor"
 #undef OPERATION
 
 	}
 
+	// Finding list of operations with same MINIMUM quantity of brackets.
 	tList<unsigned> best_ops = { };
 	for (auto it = points.begin(); it != points.end(); it++) {
 		if (it->second == min_br) {
@@ -77,6 +90,7 @@ unsigned chouseOperation(tString val) {
 		}
 	}
 
+	// Choosing from this list operation with highest priority
 #define OPERATION(SYMB, DIFF_CODE, CODE_CALC) for (unsigned i = 0; i < best_ops.tGetSize(); i++) {\
 	if (val[best_ops.tGet(i)] == SYMB) {return best_ops.tGet(i);}\
 	}
@@ -212,7 +226,7 @@ bool isOne(tExprNode *node) {
 	if (node == NULL) {
 		return 0;
 	}
-	return (node->type == constant) && (node->num_value == 1);
+	return ((node->type == constant) && (node->num_value == 1));
 }
 
 bool isPolynomial(tExprNode *node) {
@@ -465,7 +479,7 @@ void tConvertToDot(tExprNode *node, tFile *dest, bool init = 1) {
 	dest->tWriteNum<unsigned>(node->id);
 	dest->tWrite("[label=");
 	dest->tWritec('"');
-	dest->tWrite(node->value);
+	dest->tWrite(node->value.tRemoveFractTail());
 	dest->tWritec('"');
 	dest->tWriteLine("]");
 	if (node->left != NULL) {
@@ -503,7 +517,7 @@ void tSaveDotImage(tString imgName, tExprNode *node) {
 
 //! This function substitutes the value of the
 //! variables and calculates the numerical value of the expression that represents this tree.
-double tCalc(tExprNode *node, map<tString, double> vars) {
+double tCalc(const tExprNode * const node, map<tString, double> vars) {
 	if (node == NULL) {
 		return 0;
 	}
@@ -526,6 +540,10 @@ double tCalc(tExprNode *node, map<tString, double> vars) {
 #undef FUNCTION
 	}
 	if (node->type == variable) {
+		if (vars.count(node->value) == 0) {
+			std::cout << "NO SUCH VARIABLE: ";
+			node->value.out();
+		}
 		res = vars[node->value];
 	}
 	if (node->type == constant) {
