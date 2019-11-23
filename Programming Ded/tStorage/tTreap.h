@@ -12,6 +12,7 @@ namespace tStorage {
 tList<int> free_priors = { };
 unsigned free = 0;
 
+//! This function is invoked when there is no more free priors for free_priors() function.
 void gen_free_priors(unsigned cap) {
 	int *arr = new int[cap];
 	for (unsigned i = 0; i < cap; i++) {
@@ -31,6 +32,7 @@ void gen_free_priors(unsigned cap) {
 	delete arr;
 }
 
+//! Generate random unique priority for second argument in the treap.
 int free_prior() {
 	if (free_priors.tGetSize() == 0) {
 		gen_free_priors(10000);
@@ -58,10 +60,14 @@ struct tTreap {
 	}
 };
 
+//! Returns size of treap.
+//! If treap is NULL then 0 is returned.
 int SizeOf(tTreap *t) {
 	return (t == NULL ? 0 : t->size);
 }
 
+//! Updates parameters of treap.
+//! Use this function after all operations.
 void update(tTreap *t) {
 	if (t == NULL) {
 		return;
@@ -71,6 +77,9 @@ void update(tTreap *t) {
 }
 
 // [0, x] and (x, size)
+// Splits treap into two.
+// In first all x are less or equal to given x.
+// In second all x are greater then given x.
 void split(tTreap *tr, tTreap *&l, tTreap *&r, int x) {
 	if (!tr) {
 		l = r = NULL;
@@ -86,7 +95,8 @@ void split(tTreap *tr, tTreap *&l, tTreap *&r, int x) {
 	update(r);
 }
 
-// ALL l.x < ALL r.x
+//! Merges treaps into one.
+//! Necessary condition: ALL l.x < ALL r.x
 void merge(tTreap *l, tTreap *r, tTreap *&tr) {
 	if (!l || !r) {
 		tr = (!l ? r : l);
@@ -101,6 +111,7 @@ void merge(tTreap *l, tTreap *r, tTreap *&tr) {
 	update(tr);
 }
 
+//! Bounds new treap node in compliance with all rules into existed treap.
 void insert(tTreap *&tr, tTreap *ins) {
 	if (!tr) {
 		tr = ins;
@@ -116,6 +127,7 @@ void insert(tTreap *&tr, tTreap *ins) {
 	update(tr);
 }
 
+//! Returns k-th element from array. If these treap Xs was sorted.
 tTreap* tKThFromStart(tTreap *tr, unsigned i) {
 	if (!tr) {
 		return NULL;
@@ -132,7 +144,11 @@ tTreap* tKThFromStart(tTreap *tr, unsigned i) {
 }
 
 
-// [0, pos) and [pos, size)
+//! [0, pos) and [pos, size)
+//! USE FOR IMPLICIT TREAP ONLY!
+//! Devides 'array' into two parts.
+//! In first there will be pos - 1 elements.
+//! In second there will be following elements.
 void split_imp(tTreap *tr, tTreap *&l, tTreap *&r, unsigned pos) {
 	if (!tr) {
 		l = r = NULL;
@@ -152,6 +168,8 @@ void split_imp(tTreap *tr, tTreap *&l, tTreap *&r, unsigned pos) {
 	update(r);
 }
 
+//! USE FOR IMPLICIT TREAP ONLY!
+//! Inserts element to given position in the 'array'.
 void insert_imp(tTreap *&tr, tTreap *ins, unsigned pos) {
 	tTreap *l = NULL;
 	tTreap *r = NULL;
@@ -162,6 +180,8 @@ void insert_imp(tTreap *&tr, tTreap *ins, unsigned pos) {
 	merge(l, r, tr);
 }
 
+//! Converts treap into tString.
+//! Element are sorted.
 tString tToString(tTreap *tr) {
 	tString res = { };
 
@@ -186,6 +206,8 @@ tString tToString(tTreap *tr) {
 	return res;
 }
 
+//! USE FOR IMPLICIT TREAP ONLY!
+//! Deletes element from given position from the 'array'.
 void erase_imp(tTreap *&tr, unsigned pos) {
 	tTreap *l = NULL;
 	tTreap *r = NULL;
@@ -200,6 +222,7 @@ void erase_imp(tTreap *&tr, unsigned pos) {
 	merge(l, r1, tr);
 }
 
+//! Erases element by the given key.
 void erase(tTreap *&tr, int x) {
 	if (!tr) {
 		tThrowException("NO SUCH ELEMENT IN TREAP!");

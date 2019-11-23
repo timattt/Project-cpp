@@ -27,6 +27,16 @@ char tReadCharFromLine() {
 	return c;
 }
 
+//! Returns minimum of a and b.
+template<typename T = int> T tMin(T a, T b) {
+	return (a < b ? a : b);
+}
+
+//! Returns minimum of a and b.
+template<typename T = int> T tMax(T a, T b) {
+	return (b < a ? a : b);
+}
+
 namespace {
 
 // For the encapsulation!
@@ -87,16 +97,6 @@ double tRoundTo(double val, unsigned digs) {
 double tRoundToFirstDecimalPlace(double val) {
 	unsigned count = tGetFirstSignificantDecimalPlace(val);
 	return tRoundTo(val, count);
-}
-
-//! Returns minimum of a and b.
-template<typename T = int> T tMin(T a, T b) {
-	return (a < b ? a : b);
-}
-
-//! Returns minimum of a and b.
-template<typename T = int> T tMax(T a, T b) {
-	return (b < a ? a : b);
 }
 
 template<typename T> bool tCompare(const T *a, const T *b, unsigned len) {

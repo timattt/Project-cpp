@@ -21,7 +21,8 @@ template<typename T> class tList {
 	unsigned size;
 
 	void tChangeCapacity(unsigned newLen) {
-		mem = (char*) realloc(mem, (newLen) * tNodeSize());
+		mem = (char*) realloc(mem, newLen * tNodeSize());
+		//mem = tRealloc(mem, currentCapacity, newLen * tNodeSize());
 		currentCapacity = newLen;
 	}
 
@@ -241,7 +242,7 @@ public:
 		size--;
 	}
 
-	T & operator[](unsigned i) {
+	T& operator[](unsigned i) {
 		return tGet(i);
 	}
 
@@ -268,7 +269,7 @@ public:
 	}
 
 	T* tToArray() {
-		T * array = new T[size];
+		T *array = new T[size];
 		for (unsigned i = 0; i < size; i++) {
 			array[i] = tGet(i);
 		}

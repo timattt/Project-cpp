@@ -22,9 +22,9 @@ int __tStrlen(const char *str) {
 }
 
 unsigned free_pointer = 1;
-tList<map<unsigned, char*>*> __branches;
+tList<map<unsigned, tPair<char*, unsigned> >*> __branches;
 
-map<unsigned, char*>* __tCurrentBranch() {
+map<unsigned, tPair<char*, unsigned>>* __tCurrentBranch() {
 	return __branches.tGetLastElement();
 }
 
@@ -34,14 +34,14 @@ bool __tIsRunning() {
 
 //! Creates new branch where all new tString objects will be stored.
 void __tNewBranch() {
-	__branches.tAddLast(new map<unsigned, char*>());
+	__branches.tAddLast(new map<unsigned, tPair<char*, unsigned>>());
 }
 
 //! Deletes current branch and frees all tString object called after last __tNewBranch call.
 void __tFlushBranch() {
-	map<unsigned, char*> *curr = __tCurrentBranch();
+	map<unsigned, tPair<char*, unsigned>> *curr = __tCurrentBranch();
 	for (auto i = curr->begin(); i != curr->end(); i++) {
-		delete i->second;
+		delete i->second.x;
 	}
 
 	__branches.tRemoveLast();
@@ -58,79 +58,125 @@ unsigned __tAllocStr(unsigned sz) {
 	unsigned pointer = free_pointer;
 	free_pointer++;
 
-	(*__tCurrentBranch())[pointer] = str;
+	(*__tCurrentBranch())[pointer].x = str;
+	(*__tCurrentBranch())[pointer].y = sz;
 	return pointer;
 }
 
+unsigned __tStrSize(unsigned ptr) {
+	return (*__tCurrentBranch())[ptr].y;
+}
+
 //! Changes size to existed tString.
-void __tReallocStr(unsigned ptr, unsigned len) {
-	char *str = (*__tCurrentBranch())[ptr];
-	str = (char*) realloc(str, len);
-	(*__tCurrentBranch())[ptr] = str;
+void __tReallocStr(unsigned ptr, unsigned size_old, unsigned size_new) {
+	char *str = (*__tCurrentBranch())[ptr].x;
+	str = (char*) realloc(str, size_new);
+	(*__tCurrentBranch())[ptr].x = str;
+	(*__tCurrentBranch())[ptr].y = size_new;
 }
 
 //! Gives array of this pointer.
 char* __tGetArray(unsigned ptr) {
-	char *str = (*__tCurrentBranch())[ptr];
+	char *str = (*__tCurrentBranch())[ptr].x;
 	return str;
 }
 
 class tString {
 public:
+	// Link to array
+	char* __array() const {
+		return __tGetArray(tPointer);
+	}
+
 	// Branch system pointer.
 	unsigned tPointer;
-	// Size of this string.
-	unsigned size;
-	// Pointer to char array.
-	char *string;
+
+	// Link to size
+	unsigned size() const {
+		return __tStrSize(tPointer);
+	}
 
 	template<typename T> tString(T number) :
-			tPointer(__tAllocStr(0)), size(0), string(__tGetArray(tPointer)) {
-		const char *arr = std::to_string(number).c_str();
+			tPointer(__tAllocStr(0)) {
+
+		// Create an output string stream
+		std::ostringstream streamObj;
+		//Add double to stream
+		streamObj << std::scientific << number;
+
+		const char *arr = streamObj.str().c_str();
 		unsigned len = __tStrlen(arr);
 		tSet(arr, len);
 	}
 
 	//! Creates new string. Determine size using __tStrlen function.
 	tString(const char *str) :
-			tPointer(__tAllocStr(__tStrlen(str))), size(__tStrlen(str)), string(
-					__tGetArray(tPointer)) {
-		tCopyBuffers(str, string, size);
+			tPointer(__tAllocStr(__tStrlen(str))) {
+		tCopyBuffers(str, __array(), size());
 	}
 
 	//! Creates empty string.
 	tString() :
-			tPointer(__tAllocStr(0)), size(0), string(__tGetArray(tPointer)) {
+			tPointer(__tAllocStr(0)) {
 	}
 
 	tString(char c) :
-			tPointer(__tAllocStr(1)), size(1), string(__tGetArray(tPointer)) {
-		string[0] = c;
+			tPointer(__tAllocStr(1)) {
+		__array()[0] = c;
 	}
 
 	//! Creates new string and copies data from given pointer.
 	tString(char *str, unsigned len) :
-			tPointer(__tAllocStr(len)), size(len), string(__tGetArray(tPointer)) {
-		tCopyBuffers(str, string, len);
+			tPointer(__tAllocStr(len)) {
+		tCopyBuffers(str, __array(), len);
 	}
 
-	//! Removes all zeros from end.
-	//! Example: 3.345000000 -> 3.345
-	//! Example: 00000 -> 0
 	tString tRemoveFractTail() {
 		tString str = { *this };
-		unsigned i = size - 1;
-		if (size > 1 && string[i] == 'l' && string[i - 1] >= '0' && string[i - 1] <= '9') {
-			i--;
+		bool minus = 0;
+		if (str.__array()[0] == '-') {
+			minus = 1;
+			str = str.tCropFirst();
 		}
-		for (; i > 0 && string[i] == string[size - 1]; i--) {
+
+		tString e = str.tSubstring(str.size() - 5, str.size() - 1);
+		str = str.tSubstring(0, str.size() - 6);
+
+		//str.out();
+		//e.out();
+
+		tString num = e.tSubstring(2, e.size() - 1);
+		unsigned n = num.tToInt();
+		int sign = (e.tCount('+') > 0 ? 1 : -1);
+
+		str = str.deleteSymbol('.');
+
+		if (sign > 0) {
+			for (unsigned i = 0; i < n; i++) {
+				str += '0';
+			}
+			str = str.insertSymbol('.', n);
+		} else {
+			for (unsigned i = 0; i < n; i++) {
+				str = tString('0') + str;
+			}
+			str = str.insertSymbol('.', 0);
 		}
-		if (string[i] == '.') {
-			i--;
+
+		while (str[str.size() - 1] == '0' || str[str.size() - 1] == '.') {
+			if (str[str.size() - 1] == '.') {
+				str = str.tCropLast();
+				break;
+			}
+			str = str.tCropLast();
 		}
-		str.tResize(i + 1);
+
+		if (minus) {
+			str = tString('-') + str;
+		}
 
 		return str;
+
 	}
 
 	//! Resizes this string to new size and copies data from given array.
@@ -139,31 +185,33 @@ public:
 			tThrowException("Can not set NULL to tString!");
 		}
 		tResize(len);
-		tCopyBuffers(arr, string, len);
+		tCopyBuffers(arr, __array(), len);
 	}
 
 	//! Returns string with deleted first symbol.
 	tString tCropFirst() const {
-		return tSubstring(1, size - 1);
+		return tSubstring(1, size() - 1);
 	}
 
 	//! Returns string with deleted last symbol.
 	tString tCropLast() const {
-		return tSubstring(0, size - 2);
+		return tSubstring(0, size() - 2);
 	}
 
 	//! Changes size of this string char array.
 	void tResize(unsigned sz) {
-		size = sz;
-		__tReallocStr(tPointer, sz);
-		string = __tGetArray(tPointer);
+		__tReallocStr(tPointer, size(), sz);
 	}
 
 	//! Writes this string to console.
 	void tWrite() const {
-		for (unsigned i = 0; i < size; i++) {
-			std::cout << string[i];
+		if (__array() == NULL) {
+			tThrowException("STRING IS NULL!");
 		}
+		for (unsigned i = 0; i < size(); i++) {
+			std::cout << __array()[i];
+		}
+		std::cout.flush();
 	}
 
 	void operator+=(tString other) {
@@ -176,12 +224,12 @@ public:
 
 	tString operator+(tString other) const {
 		tString result = { };
-		result.tResize(size + other.size);
-		for (unsigned i = 0; i < size; i++) {
-			result[i] = string[i];
+		result.tResize(size() + other.size());
+		for (unsigned i = 0; i < size(); i++) {
+			result[i] = __array()[i];
 		}
-		for (unsigned i = 0; i < other.size; i++) {
-			result[size + i] = other[i];
+		for (unsigned i = 0; i < other.size(); i++) {
+			result[size() + i] = other[i];
 		}
 
 		return result;
@@ -196,12 +244,26 @@ public:
 
 	//! Converts this string to int.
 	int tToInt() const {
-		return std::atoi(string);
+		if (!tHasOnlyNumbers()) {
+			tThrowException("CAN NOT CAST TO INT!");
+		}
+		char *arr = tToPlainArray();
+		int result = std::atoi(arr);
+		delete arr;
+		return result;
 	}
 
 	//! Converts this string to float.
 	float tToFloat() const {
-		return std::atof(string);
+		if (!tHasOnlyNumbers()) {
+			tThrowException("CAN NOT CAST TO FLOAT!");
+		}
+
+		char *arr = tToPlainArray();
+		float result = std::atof(arr);
+		delete[] arr;
+
+		return result;
 	}
 
 	//! Reads line and store it in this string.
@@ -210,42 +272,42 @@ public:
 		std::cout.flush();
 		for (unsigned i = 0;; i++) {
 			c = getchar();
-			if (i == size && c != '\n') {
+			if (i == size() && c != '\n') {
 				tResize(i + 1);
 			}
 			if (c == '\n') {
 				break;
 			}
-			string[i] = c;
+			__array()[i] = c;
 		}
 		std::cout.flush();
 	}
 
 	//! Gives substring [start, end].
 	tString tSubstring(unsigned start, unsigned end) const {
-		if (start > end || end >= size) {
+		if (start > end || end >= size()) {
 			tThrowException("Out of string bounds!");
 		}
 
 		tString result = { };
 		result.tResize(end - start + 1);
 		for (unsigned i = start; i <= end; i++) {
-			result.string[i - start] = string[i];
+			result.__array()[i - start] = __array()[i];
 		}
 
 		return result;
 	}
 
 	bool operator==(char c) const {
-		return size == 1 && c == string[0];
+		return size() == 1 && c == __array()[0];
 	}
 
 	bool tIsPrefix(tString pattern) {
-		if (pattern.size > size) {
+		if (pattern.size() > size()) {
 			return 0;
 		}
-		for (unsigned i = 0; i < pattern.size; i++) {
-			if (pattern.string[i] != string[i]) {
+		for (unsigned i = 0; i < pattern.size(); i++) {
+			if (pattern.__array()[i] != __array()[i]) {
 				return 0;
 			}
 		}
@@ -253,10 +315,13 @@ public:
 	}
 
 	//! Return true if string has only numbers AND POINT AND MINUS!
-	bool tHasOnlyNumbers() {
-		for (unsigned i = 0; i < size; i++) {
-			if (!((string[i] >= '0' && string[i] <= '9') || string[i] == '.'
-					|| string[i] == '-')) {
+	bool tHasOnlyNumbers() const {
+		if (tCount('.') > 1) {
+			return 0;
+		}
+		for (unsigned i = 0; i < size(); i++) {
+			if (!((__array()[i] >= '0' && __array()[i] <= '9')
+					|| __array()[i] == '.' || __array()[i] == '-')) {
 				return 0;
 			}
 		}
@@ -265,18 +330,18 @@ public:
 	}
 
 	bool operator!=(char c) const {
-		if (size != 1) {
+		if (size() != 1) {
 			return 1;
 		}
-		return c != string[0];
+		return c != __array()[0];
 	}
 
 	bool operator==(const tString &a) const {
-		if (a.size != this->size) {
+		if (a.size() != size()) {
 			return 0;
 		}
-		for (unsigned i = 0; i < a.size; i++) {
-			if ((*this)[i] != a[i]) {
+		for (unsigned i = 0; i < a.size(); i++) {
+			if (__array()[i] != a.__array()[i]) {
 				return 0;
 			}
 		}
@@ -300,27 +365,28 @@ public:
 
 	//! Generate new array as copy of this string array. Its last symbol is zero.
 	char* tToPlainArray() const {
-		char *res = new char[size + 1];
-		res[size] = '\0';
-		tCopyBuffers(string, res, size);
+		char *res = new char[size() + 1];
+		res[size()] = '\0';
+		tCopyBuffers(__array(), res, size());
 		return res;
 	}
 
 	//! Gives index of first occurrence of given symbol.
 	unsigned firstPosition(char c) const {
-		for (unsigned i = 0; i < size; i++) {
-			if (string[i] == c) {
+		for (unsigned i = 0; i < size(); i++) {
+			if (__array()[i] == c) {
 				return i;
 			}
 		}
-		return size;
+		return size();
 	}
 
 	unsigned firstPositionStr(tString pattern) {
-		for (unsigned i = 0; i < size; i++) {
+		for (unsigned i = 0; i < size(); i++) {
 			bool bad = 0;
-			for (unsigned j = 0; (i + j < size) && (j < pattern.size); j++) {
-				if (string[i + j] != pattern.string[j]) {
+			for (unsigned j = 0; (i + j < size()) && (j < pattern.size());
+					j++) {
+				if (__array()[i + j] != pattern.__array()[j]) {
 					bad = 1;
 					break;
 				}
@@ -330,28 +396,28 @@ public:
 			}
 		}
 
-		return size;
+		return size();
 	}
 
 	//! Gives index of last occurrence of given symbol.
 	unsigned lastPosition(char c) const {
-		for (unsigned i = size - 1;; i--) {
-			if (string[i] == c) {
+		for (unsigned i = size() - 1;; i--) {
+			if (__array()[i] == c) {
 				return i;
 			}
 			if (i == 0) {
-				return size;
+				return size();
 			}
 		}
-		return size;
+		return size();
 	}
 
 	//!Gives quantity of symbols in this text.
 	int tCount(char symb) const {
 
 		int result = 0;
-		for (unsigned i = 0; i < size; i++) {
-			if (string[i] == symb) {
+		for (unsigned i = 0; i < size(); i++) {
+			if (__array()[i] == symb) {
 				result++;
 			}
 		}
@@ -361,14 +427,15 @@ public:
 
 	//! Gives link to char in the array.
 	char& tGetc(unsigned i) {
-		return string[i];
+		return __array()[i];
 	}
 
 	bool tContains(tString pattern) const {
-		for (unsigned i = 0; i < size; i++) {
+		for (unsigned i = 0; i < size(); i++) {
 			bool bad = 0;
-			for (unsigned j = 0; (i + j < size) && (j < pattern.size); j++) {
-				if (string[i + j] != pattern.string[j]) {
+			for (unsigned j = 0; (i + j < size()) && (j < pattern.size());
+					j++) {
+				if (__array()[i + j] != pattern.__array()[j]) {
 					bad = 1;
 					break;
 				}
@@ -383,42 +450,69 @@ public:
 
 	tString tCastofSymbol(char c) {
 		tString res = { };
-		for (unsigned i = 0; i < size; i++) {
-			if (string[i] != c) {
-				res = res + string[i];
+		for (unsigned i = 0; i < size(); i++) {
+			if (__array()[i] != c) {
+				res = res + __array()[i];
 			}
 		}
 		return res;
 	}
 
 	bool operator<(const tString &a) const {
-		for (unsigned i = 0; i < tMin<unsigned>(a.size, size); i++) {
-			if (string[i] == a.string[i]) {
+		for (unsigned i = 0; i < tMin<unsigned>(a.size(), size()); i++) {
+			if (__array()[i] == a.__array()[i]) {
 				continue;
 			}
-			return string[i] < a.string[i];
+			return __array()[i] < a.__array()[i];
 		}
-		return size < a.size;
+		return size() < a.size();
 	}
 
 	char& operator[](int i) const {
-		return string[i];
+		return __array()[i];
 	}
 
 	//! Divides this string into two by symbol in position pos. SYMBOL IS NOT INCLUDED!
 	tString* tDivide(unsigned pos) const {
 		tString *result = new tString[2];
 
-		result[0] = tSubstring(0, pos - 1);
-		result[1] = tSubstring(pos + 1, size - 1);
+		if (0 < pos && pos < size() - 1) {
+			result[0] = tSubstring(0, pos - 1);
+			result[1] = tSubstring(pos + 1, size() - 1);
+		}
+		if (pos == 0) {
+			result[1] = this->tCropFirst();
+		}
+		if (pos == size() - 1) {
+			result[0] = this->tCropLast();
+		}
 
 		return result;
 	}
 
-	//! Divides char array by bad symbols.
+	// [0, pos] + c + [pos, size)
+	tString insertSymbol(char c, unsigned pos) {
+		char del = __array()[pos];
+		tString *divs = tDivide(pos);
+		tString res = divs[0] + del + c + divs[1];
+		delete divs;
+
+		return res;
+	}
+
+	tString deleteSymbol(char c) const {
+		unsigned pos = firstPosition(c);
+		tString *divs = tDivide(pos);
+		tString res = divs[0] + divs[1];
+		delete divs;
+
+		return res;
+	}
+
+//! Divides char array by bad symbols.
 	tString* tParse(const char *bad_symbols, unsigned total_bad_symbols,
 			unsigned &total) {
-		tString *result = (tString*) calloc(size, sizeof(tString));
+		tString *result = (tString*) calloc(size(), sizeof(tString));
 		unsigned total_ = 0;
 
 		auto is_bad = [](char symb, const char *bad, unsigned tbs) {
@@ -431,19 +525,19 @@ public:
 			return 0;
 		};
 
-		for (unsigned beg = 0, end = 0; beg < size;
+		for (unsigned beg = 0, end = 0; beg < size();
 				beg++, end = std::max(end, beg)) {
 
 			if (is_bad(tGetc(beg), bad_symbols, total_bad_symbols)) {
 				continue;
 			}
 
-			while (end < size
+			while (end < size()
 					&& !is_bad(tGetc(end), bad_symbols, total_bad_symbols)) {
 				end++;
 			}
 
-			tString tmp = { this->string + beg, end - beg };
+			tString tmp = { this->__array() + beg, end - beg };
 
 			result[total_] = (tmp);
 

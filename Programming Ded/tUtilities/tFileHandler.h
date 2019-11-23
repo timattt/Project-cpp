@@ -18,6 +18,18 @@ void tCreateDotImg(tString fileName, tString imgName) {
 	delete command;
 }
 
+bool tFileExists(tString file) {
+	WIN32_FIND_DATA FindFileData;
+	char *arr = file.tToPlainArray();
+	HANDLE handle = FindFirstFile(arr, &FindFileData);
+	delete arr;
+	bool found = (handle != INVALID_HANDLE_VALUE );
+	if (found) {
+		FindClose(handle);
+	}
+	return found;
+}
+
 class tFile {
 
 	// Name
@@ -29,6 +41,9 @@ class tFile {
 	// Mapping
 	HANDLE file_mapping_handle;
 	char *mapped_buffer;
+
+	// Read line utility
+	unsigned lines_passed = 0;
 
 	// File reading
 	char *curr_map_byte;
@@ -69,11 +84,11 @@ public:
 	//! If length is initialized then uses only first [length] symbols.
 	//! If not then uses tStrlen() function.
 	void tWriteLine(tString line) {
-		if (mapped_buffer + sizeBytes < curr_map_byte + line.size) {
+		if (mapped_buffer + sizeBytes < curr_map_byte + line.size()) {
 			tThrowException("Can not write line!");
 		}
-		tCopyBuffers(line.string, curr_map_byte, line.size);
-		curr_map_byte += line.size;
+		tCopyBuffers(line.__array(), curr_map_byte, line.size());
+		curr_map_byte += line.size();
 
 		tWritec('\n');
 	}
@@ -82,11 +97,11 @@ public:
 	//! If length is initialized then uses only first [length] symbols.
 	//! If not then uses tStrlen() function.
 	void tWrite(tString line) {
-		if (mapped_buffer + sizeBytes < curr_map_byte + line.size) {
+		if (mapped_buffer + sizeBytes < curr_map_byte + line.size()) {
 			tThrowException("Can not write line!");
 		}
-		tCopyBuffers(line.string, curr_map_byte, line.size);
-		curr_map_byte += line.size;
+		tCopyBuffers(line.__array(), curr_map_byte, line.size());
+		curr_map_byte += line.size();
 	}
 
 	//! Writes any symbol to current byte.
@@ -260,11 +275,26 @@ public:
 		std::cout << "]\n";
 	}
 
+	//! This function gives quantity of new line symbol that was passed on last tReadLine function call.
+	unsigned tGetPassedLines() {
+		return lines_passed;
+	}
+
 	//! This function returns pointer to begin of this line which is located in mapped memory.
 	//! And it gives it length.
 	tString tReadLine() {
 		if (!tHasMoreSymbs()) {
 			tThrowException("Out of file range!");
+		}
+
+		lines_passed = 0;
+		while (curr_map_byte < mapped_buffer + sizeBytes
+				&& (*curr_map_byte == '\r' || *curr_map_byte == '\n'
+						|| *curr_map_byte == '\0')) {
+			if (*curr_map_byte == '\n') {
+				lines_passed++;
+			}
+			curr_map_byte++;
 		}
 
 		char *beg = curr_map_byte;
@@ -278,6 +308,9 @@ public:
 		while (curr_map_byte < mapped_buffer + sizeBytes
 				&& (*curr_map_byte == '\r' || *curr_map_byte == '\n'
 						|| *curr_map_byte == '\0')) {
+			if (*curr_map_byte == '\n') {
+				lines_passed++;
+			}
 			curr_map_byte++;
 		}
 
@@ -289,13 +322,13 @@ public:
 	}
 };
 
-void tShrink(tFile *& fl) {
+void tShrink(tFile *&fl) {
 	unsigned len = fl->tGetCurrentByte();
 	char *buf = new char[len];
 	tCopyBuffers(fl->tGetBuffer(), buf, len);
 	tString name = fl->tGetName();
 	delete fl;
-	char * name_tmp = name.tToPlainArray();
+	char *name_tmp = name.tToPlainArray();
 	DeleteFileA(name_tmp);
 	delete name_tmp;
 	fl = new tFile(name);

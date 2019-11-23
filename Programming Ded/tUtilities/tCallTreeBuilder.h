@@ -62,7 +62,7 @@ void __tGoOut(tString ret = {}) {
 		tThrowException("Call hierarchy is empty!");
 	}
 	tString from = call_hierarchy.tRemoveLast();
-	if (call_hierarchy.tGetSize() >= 1 && ret.size > 0) {
+	if (call_hierarchy.tGetSize() >= 1 && ret.size() > 0) {
 		tString to = call_hierarchy.tGetLastElement();
 
 		tString line = { };

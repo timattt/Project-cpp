@@ -46,7 +46,7 @@ const unsigned PIXEL_SIDE = 5;
 
 // Gives address for given symbolic value of the register.
 char tGetRegisterIndex(tString args) {
-	if (args.size < 2) {
+	if (args.size() < 2) {
 		tThrowException("Arguments are NULL!");
 	}
 
@@ -306,20 +306,20 @@ map<tString, unsigned>* tGenJmpsLib(tFile *src) {
 
 	while (src->tHasMoreSymbs()) {
 		tString line = src->tReadLine();
-		for (unsigned len = 0; len < line.size; len++) {
+		for (unsigned len = 0; len < line.size(); len++) {
 			if ((line)[len] == ':') {
 				unsigned total_divs = 0;
 				tString *divs = line.tParse(SRC_IGNORE_SYMBS,
 						SRC_IGNORE_SYMBS_QUANT, total_divs);
 
 				if (divs == NULL || total_divs < 1
-						|| divs[total_divs - 1].size == 0) {
+						|| divs[total_divs - 1].size() == 0) {
 					tThrowException(
 							"Compilation error! Something is wrong with jmps!");
 				}
 
 				(*result)[divs[total_divs - 1].tSubstring(0,
-						divs[total_divs - 1].size - 2)] = src->tGetCurrentByte();
+						divs[total_divs - 1].size() - 2)] = src->tGetCurrentByte();
 
 				delete divs;
 
@@ -358,7 +358,7 @@ void tCompile(tFile *source, tFile *exe) {
 		// Checking if it is jump
 		for (unsigned i = 0; i < total_divs; i++) {
 			// double dot index :
-			unsigned dd_index = divs[i].size - 1;
+			unsigned dd_index = divs[i].size() - 1;
 			if (divs[i].tGetc(dd_index) == ':') {
 				tString cutted = divs[i].tSubstring(0, dd_index - 1);
 
@@ -375,7 +375,7 @@ void tCompile(tFile *source, tFile *exe) {
 			continue;
 		}
 
-		if (divs[0].size > 1 && divs[0].tGetc(0) == '/'
+		if (divs[0].size() > 1 && divs[0].tGetc(0) == '/'
 				&& divs[0].tGetc(1) == '/') {
 			delete divs;
 			continue;
@@ -403,13 +403,13 @@ void tCompile(tFile *source, tFile *exe) {
 
 			char isRam = 0;
 			if (divs[i].tGetc(0) == '['
-					&& divs[i].tGetc(divs[i].size - 1) == ']') {
+					&& divs[i].tGetc(divs[i].size() - 1) == ']') {
 				isRam = (char) (127);
 
-				divs[i] = divs[i].tSubstring(1, divs[i].size - 1);
+				divs[i] = divs[i].tSubstring(1, divs[i].size() - 1);
 			}
 
-			char address = (divs[i].size > 1 ? tGetRegisterIndex(divs[i]) : -1);
+			char address = (divs[i].size() > 1 ? tGetRegisterIndex(divs[i]) : -1);
 
 			exe->tWritec(isRam);
 

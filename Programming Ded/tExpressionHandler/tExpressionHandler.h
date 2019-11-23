@@ -26,7 +26,7 @@ tString cropBrackets(tString val) {
 		beg_br++;
 	}
 	// Calculating how many brackets in the end of string
-	unsigned end_br = val.size - 1;
+	unsigned end_br = val.size() - 1;
 	while (val[end_br] == ')') {
 		end_br--;
 	}
@@ -36,7 +36,7 @@ tString cropBrackets(tString val) {
 	// Checking all pairs of brackets.
 	// And remove those which are both in begin and end
 	// Example ((..).) => (..).
-	for (unsigned i = 0; i < val.size; i++) {
+	for (unsigned i = 0; i < val.size(); i++) {
 		if (val[i] == '(') {
 			open_br.tAddLast(i);
 		}
@@ -51,7 +51,7 @@ tString cropBrackets(tString val) {
 	}
 
 	// Cropping
-	return val.tSubstring(total_crop, val.size - 1 - total_crop);
+	return val.tSubstring(total_crop, val.size() - 1 - total_crop);
 }
 
 //! this function selects the desired operation in such a way as not to disrupt their execution order
@@ -64,7 +64,7 @@ unsigned chouseOperation(tString val) {
 	// Example: ((4*7)) => 2 brackets
 	unsigned brackets = 0;
 	unsigned min_br = 10000000;
-	for (unsigned i = 0; i < val.size; i++) {
+	for (unsigned i = 0; i < val.size(); i++) {
 		// Correct quantity of brackets
 		if (val[i] == '(') {
 			brackets++;
@@ -97,7 +97,7 @@ unsigned chouseOperation(tString val) {
 #include "../tExpressionHandler/NodeConstructor"
 #undef OPERATION
 
-	return val.size;
+	return val.size();
 }
 
 unsigned FREE_ID = 0;
@@ -162,7 +162,7 @@ if (type == none && val.tIsPrefix(#NAME)) {\
 
 		// OPERATION
 		unsigned pos = chouseOperation(val);
-		if (pos != val.size) {
+		if (pos != val.size()) {
 			value = { val[pos] };
 			type = operation;
 			tString *divs = val.tDivide(pos);
@@ -315,7 +315,13 @@ tString tToString(tExprNode *node) {
 				&& isPolynomial(node->left)) {
 			result += '(';
 		}
+		if (node->type == operation && node->value == '/') {
+			result += '(';
+		}
 		result += tToString(node->left);
+		if (node->type == operation && node->value == '/') {
+			result += ')';
+		}
 		if (node->type == operation && node->value != '+'
 				&& isPolynomial(node->left)) {
 			result += ')';
@@ -337,7 +343,13 @@ tString tToString(tExprNode *node) {
 		if (isFunction(node)) {
 			result += tString('(');
 		}
+		if (node->type == operation && node->value == '/') {
+			result += '(';
+		}
 		result += tToString(node->right);
+		if (node->type == operation && node->value == '/') {
+			result += ')';
+		}
 		if (isFunction(node)) {
 			result += tString(')');
 		}
@@ -517,7 +529,7 @@ void tSaveDotImage(tString imgName, tExprNode *node) {
 
 //! This function substitutes the value of the
 //! variables and calculates the numerical value of the expression that represents this tree.
-double tCalc(const tExprNode * const node, map<tString, double> vars) {
+double tCalc(const tExprNode *const node, map<tString, double> vars) {
 	if (node == NULL) {
 		return 0;
 	}
@@ -555,7 +567,7 @@ double tCalc(const tExprNode * const node, map<tString, double> vars) {
 
 //! This function differentiate given in node tree equation.
 //! Differentiation is carried out according to the variable that is stored in the string.
-tExprNode* tDifferentiate(tExprNode *node, tString var) {
+tExprNode* tDifferentiate(const tExprNode *node, const tString var__) {
 	if (node == NULL) {
 		return NULL;
 	}
@@ -563,8 +575,8 @@ tExprNode* tDifferentiate(tExprNode *node, tString var) {
 	// These all is to make access from Node constructor easier
 #define l (*node->left)
 #define r (*node->right)
-#define dl (*tDifferentiate(&l, var))
-#define dr (*tDifferentiate(&r, var))
+#define dl (*tDifferentiate(&l, var__))
+#define dr (*tDifferentiate(&r, var__))
 #define cl (*tCopy(&l))
 #define cr (*tCopy(&r))
 #define num(A) (*new tExprNode(A))
@@ -589,7 +601,7 @@ tExprNode* tDifferentiate(tExprNode *node, tString var) {
 
 		break;
 	case variable:
-		return ((var == node->value) ? &num(1) : &num(0));
+		return ((var__ == node->value) ? &num(1) : &num(0));
 	case none:
 		break;
 	}
