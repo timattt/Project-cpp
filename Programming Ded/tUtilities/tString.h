@@ -249,7 +249,6 @@ public:
 		}
 		char *arr = tToPlainArray();
 		int result = std::atoi(arr);
-		delete arr;
 		return result;
 	}
 
@@ -261,7 +260,6 @@ public:
 
 		char *arr = tToPlainArray();
 		float result = std::atof(arr);
-		delete[] arr;
 
 		return result;
 	}
@@ -365,10 +363,8 @@ public:
 
 	//! Generate new array as copy of this string array. Its last symbol is zero.
 	char* tToPlainArray() const {
-		char *res = new char[size() + 1];
-		res[size()] = '\0';
-		tCopyBuffers(__array(), res, size());
-		return res;
+		tString str = *this + '\0';
+		return str.__array();
 	}
 
 	//! Gives index of first occurrence of given symbol.

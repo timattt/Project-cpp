@@ -407,7 +407,7 @@ void sum(tString line) {
 	double inf = 0;
 	for (unsigned i = 0; i < from_->size; i++) {
 		sum += from_->values[i];
-		inf += from_->infilicity[i] * from_->infilicity[i];
+		inf += (from_->infilicity[i] * from_->infilicity[i]);
 	}
 
 	inf = std::pow(inf, 0.5);

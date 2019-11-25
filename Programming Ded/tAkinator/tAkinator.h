@@ -41,7 +41,7 @@ public:
 	statementVertex *yes;
 
 	statementVertex() :
-			statement( { }), no(NULL), yes(NULL) {
+			statement(), no(NULL), yes(NULL) {
 	}
 
 	statementVertex(tString st) :
@@ -375,7 +375,7 @@ void drawVertex(statementVertex *vert, unsigned x = WIDTH / 2 - SIDE / 2,
 	char tmp[200];
 
 	tFill<char>(tmp, 0, 200);
-	tCopyBuffers(vert->statement.ggggg, tmp, vert->statement.size());
+	tCopyBuffers(vert->statement.__array(), tmp, vert->statement.size());
 
 	txDrawText(SIDE / 2 + x - SIDE / 2, SIDE / 2 + y - SIDE / 2,
 			SIDE / 2 + x + SIDE / 2, SIDE / 2 + y + SIDE / 2, tmp);

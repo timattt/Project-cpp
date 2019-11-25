@@ -11,6 +11,10 @@ using namespace tFileHandler;
 
 namespace tUtilities {
 
+void __tFastStart();
+void __tFastEnd();
+void __tGoInto(tString lable);
+
 tList<tString> call_hierarchy = { };
 tFile *hierarchy_output = NULL;
 
@@ -28,21 +32,29 @@ void __tEndMonitoring() {
 	hierarchy_output = NULL;
 }
 
-void __tGoInto(tString raw) {
-	tString name = raw + '_' + tString(freeID++);
+int h = 0;
+
+void __tGoInto(tString lable) {
+	if (h++ > 200) {
+		tUtilities::__tFastEnd();
+		exit(0);
+	}
+	//std::cout << "Going into ";
+	//lable.out();
+
+	tString name = tString('_') + tString(freeID++);
 
 	tString line = { };
 
 	line += name;
 	line += ("[label=");
 	line += ('"');
-	line += (raw);
+	line += lable;
 	line += ('"');
 	line += ("]");
 
 	hierarchy_output->tWriteLine(line);
 
-	/*
 	line = { };
 
 	if (call_hierarchy.tGetSize() > 0) {
@@ -50,34 +62,41 @@ void __tGoInto(tString raw) {
 		line += tString(" -> ");
 		line += name;
 	}
-	*/
 
 	call_hierarchy.tAddLast(name);
 
 	hierarchy_output->tWriteLine(line);
 }
 
-void __tGoOut(tString ret = {}) {
+void __tGoOut(tString ret = { }) {
+	//std::cout << "Going out ";
+	//ret.out();
 	if (call_hierarchy.tGetSize() == 0) {
 		tThrowException("Call hierarchy is empty!");
 	}
-	tString from = call_hierarchy.tRemoveLast();
-	if (call_hierarchy.tGetSize() >= 1 && ret.size() > 0) {
-		tString to = call_hierarchy.tGetLastElement();
+	//tString from =
+	call_hierarchy.tRemoveLast();
 
-		tString line = { };
+	/*
+	 if (call_hierarchy.tGetSize() >= 1) {
+	 tString to = call_hierarchy.tGetLastElement();
 
-		line += to;
-		line += tString(" -> ");
-		line += from;
-		line += "[label=";
-		line += '"';
-		line += ret;
-		line += '"';
-		line += ']';
+	 tString line = { };
 
-		hierarchy_output->tWriteLine(line);
-	}
+	 line += to;
+	 line += tString(" -> ");
+	 line += from;
+	 if (ret.size() > 0) {
+	 line += "[label=";
+	 line += '"';
+	 line += ret;
+	 line += '"';
+	 line += ']';
+	 }
+
+	 hierarchy_output->tWriteLine(line);
+	 }
+	 */
 }
 
 tFile *fastStartFile = NULL;

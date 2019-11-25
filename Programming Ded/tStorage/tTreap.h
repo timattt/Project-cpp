@@ -41,7 +41,6 @@ int free_prior() {
 }
 
 }
-
 struct tTreap {
 	int x;
 	int y;

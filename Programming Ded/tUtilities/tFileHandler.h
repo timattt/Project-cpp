@@ -15,14 +15,12 @@ void tCreateDotImg(tString fileName, tString imgName) {
 			+ imgName + tString(".png");
 	char *command = result.tToPlainArray();
 	system(command);
-	delete command;
 }
 
 bool tFileExists(tString file) {
 	WIN32_FIND_DATA FindFileData;
 	char *arr = file.tToPlainArray();
 	HANDLE handle = FindFirstFile(arr, &FindFileData);
-	delete arr;
 	bool found = (handle != INVALID_HANDLE_VALUE );
 	if (found) {
 		FindClose(handle);
@@ -330,7 +328,6 @@ void tShrink(tFile *&fl) {
 	delete fl;
 	char *name_tmp = name.tToPlainArray();
 	DeleteFileA(name_tmp);
-	delete name_tmp;
 	fl = new tFile(name);
 	fl->tStartMapping(len);
 	tCopyBuffers(buf, fl->tGetBuffer(), len);
