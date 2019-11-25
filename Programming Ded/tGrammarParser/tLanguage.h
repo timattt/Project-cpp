@@ -77,7 +77,7 @@ public:
 		__tGoInto("G");
 
 		E();
-		tLangNode *root = code();
+		tLangNode *root = block();
 
 		__tGoOut();
 
@@ -99,25 +99,33 @@ public:
 		return root;
 	}
 
-	tLangNode* code() {
-		__tGoInto("code");
-
-		tLangNode *res = new tLangNode(";");
-
-		while (action_()) {
-			res->addChild(action());
-			E();
-			s++;
+	tLangNode* block() {
+		__tGoInto("block");
+		s++; //{
+		tLangNode *nd = new tLangNode("{}");
+		E();
+		while (*s != '}' && (action_() || block_())) {
+			bool action__ = action_();
+			bool block__ = block_();
+			if (action__) {
+				nd->addChild(action());
+				E();
+				s++; //;
+			}
+			if (block__) {
+				nd->addChild(block());
+			}
 			E();
 		}
 
-		__tGoOut();
+		s++; //}
 
-		return res;
+		__tGoOut();
+		return nd;
 	}
 
-	bool code_() {
-		return action_();
+	bool block_() {
+		return *s == '{';
 	}
 
 	tLangNode* action() {
@@ -379,7 +387,8 @@ struct ttType {
 
 	ttType(unsigned sz, tString nm, tString (*add_)(tString, tString),
 			tString (*mul_)(tString, tString), tString sub_(tString, tString),
-			tString (*div_)(tString, tString), tString (*toString_)(tString), tString (*fromString_)(tString)) :
+			tString (*div_)(tString, tString), tString (*toString_)(tString),
+			tString (*fromString_)(tString)) :
 			size(sz), name(nm), add(add_), mul(mul_), sub(sub_), div(div_), toBytes(
 					toString_), fromBytes(fromString_) {
 	}
@@ -439,16 +448,17 @@ public:
 			cur = root;
 		}
 
-		__tGoInto(cur->name);
+		//__tGoInto(cur->name);
 
 		//cur->name.out();
 
+#define RETURN return//__tGoOut(); return
 #define OPERATOR(NAME, CODE) if (cur->name == tString(#NAME)) {CODE;}
 #include "Patterns/OPERATORS"
 #undef OPERATOR
 
-		__tGoOut();
-		return cur->name;
+
+		RETURN cur->name;
 	}
 
 };

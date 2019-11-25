@@ -39,8 +39,8 @@ void __tGoInto(tString lable) {
 		tUtilities::__tFastEnd();
 		exit(0);
 	}
-	//std::cout << "Going into ";
-	//lable.out();
+	std::cout << "Going into ";
+	lable.out();
 
 	tString name = tString('_') + tString(freeID++);
 
@@ -69,8 +69,8 @@ void __tGoInto(tString lable) {
 }
 
 void __tGoOut(tString ret = { }) {
-	//std::cout << "Going out ";
-	//ret.out();
+	std::cout << "Going out ";
+	ret.out();
 	if (call_hierarchy.tGetSize() == 0) {
 		tThrowException("Call hierarchy is empty!");
 	}
