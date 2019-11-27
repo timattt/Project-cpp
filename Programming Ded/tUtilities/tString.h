@@ -146,7 +146,9 @@ public:
 		//e.out();
 
 		tString num = e.tSubstring(2, e.size() - 1);
+
 		unsigned n = num.tToInt();
+
 		int sign = (e.tCount('+') > 0 ? 1 : -1);
 
 		str = str.deleteSymbol('.');

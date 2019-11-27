@@ -1,0 +1,144 @@
+#define TOTAL_CHILDREN cur->size
+#define CHILD_NAME(A) cur->children[A]->name
+#define CHILD(A) cur->children[A]
+
+// NAME, CODE
+
+OPERATOR(=, {
+	tLangType * prev_tp = currentType;
+	tVariable * prev_var = currentVar;
+	currentVar = vars[run(CHILD(0))];
+	currentType = currentVar->type;
+	
+	tString val = run(CHILD(1));
+	
+	currentVar->value = val;
+	
+	currentVar = prev_var;
+	currentType = prev_tp;
+})
+OPERATOR(if, {
+	tLangType * prev = currentType;
+	currentType = tINT;
+	tString val = tINT->fromBytes(run(CHILD(0)));
+	currentType = prev;
+	if (val == "1") {
+		run(CHILD(1));
+	}
+})
+OPERATOR(NUM_VALUE, {
+	res = currentType->toBytes(run(CHILD(0)));
+})
+OPERATOR(VAR_VALUE, {
+	res = vars[run(CHILD(0))]->value;
+})
+OPERATOR(return, {
+	tLangType * prev = currentType;
+	currentType = currentMethod->return_type;
+	return_value = res = run(CHILD(0));
+	currentType = prev;
+})
+OPERATOR(useFunc, {
+	tString name = run(CHILD(0));
+
+	if (funcs.count(name) == 0) {
+		tThrowException("NO SUCH METHOD!");
+	}
+	tMethod * met = funcs[name];
+	tString * args = new tString[met->argsQuant];
+	for (unsigned i = 1; i < TOTAL_CHILDREN; i++) {
+		args[i - 1] = run(CHILD(i));
+	}
+	
+	tMethod * prev = currentMethod;
+	currentMethod = met;
+	
+	if (met->func != NULL) {
+		res = met->func(args);
+	} else {
+		run(met->start);
+		res = return_value;
+	}
+	
+	currentMethod = prev;
+	
+	return_value = {};
+	
+	delete args;
+})
+OPERATOR({}, {
+	for (unsigned i = 0; i < TOTAL_CHILDREN && (return_value == ""); i++) {
+		run(CHILD(i));
+	}
+})
+OPERATOR(var, {
+	tString var_type = run(CHILD(0));
+	tString var_name = run(CHILD(1));
+	tVariable * vr = new tVariable(types[var_type], var_name);
+	vars[var_name] = vr;
+})
+OPERATOR(*, {
+
+	tString v1 = run(CHILD(0));
+
+	for (unsigned i = 1; i < TOTAL_CHILDREN; i++) {
+		tString v2 = run(CHILD(i));
+		v1 = currentType->mul(v1, v2);	
+	}
+	res = v1;
+})
+OPERATOR(+, {
+	tString v1 = run(CHILD(0));
+	for (unsigned i = 1; i < TOTAL_CHILDREN; i++) {
+		tString v2 = run(CHILD(i));
+		v1 = currentType->add(v1, v2);	
+	}
+	res = v1;
+})
+OPERATOR(/, {
+	tString v1 = run(CHILD(0));
+	for (unsigned i = 1; i < TOTAL_CHILDREN; i++) {
+		tString v2 = run(CHILD(i));
+		v1 = currentType->div(v1, v2);	
+	}
+	res = v1;
+})
+OPERATOR(code, {
+	tMethod * main = NULL;
+
+	for (unsigned i = 0; i < TOTAL_CHILDREN; i++) {
+		tLangNode * f = CHILD(i);
+		
+		tString type_name = run(f->children[0]);
+		tLangType * tp = (type_name == tString("void") ? NULL : types[type_name]);
+		
+		tString nm = run(f->children[1]);
+		
+		tLangNode * code = f->children[2];
+		
+		funcs[nm] = new tMethod(code, 0, nm, tp);
+		
+		if (nm == "main") {
+			main = funcs[nm];
+		}
+	}
+	
+	run(main->start);
+})
+OPERATOR(-, {
+	tString v1 = currentType->neg(run(CHILD(0)));
+	for (unsigned i = 1; i < TOTAL_CHILDREN; i++) {
+		tString v2 = run(CHILD(i));
+		v1 = currentType->add(v1, currentType->neg(v2));	
+	}
+	res = v1;
+})
+OPERATOR(while, {
+	while ((tINT->fromBytes(run(CHILD(0))).tToInt()) == 1) {
+		run(CHILD(1));
+	}
+})
+
+#undef CHILD
+#undef CHILD_NAME
+#undef TOTAL_CHILDREN

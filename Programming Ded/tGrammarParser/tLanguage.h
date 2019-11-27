@@ -77,7 +77,7 @@ public:
 		__tGoInto("G");
 
 		E();
-		tLangNode *root = block();
+		tLangNode *root = code();
 
 		__tGoOut();
 
@@ -99,21 +99,174 @@ public:
 		return root;
 	}
 
+	tLangNode* code() {
+		tLangNode *res = new tLangNode("code");
+
+		E();
+
+		while (func_()) {
+			res->addChild(func());
+		}
+
+		return res;
+	}
+
+	bool func_() {
+		return *(s) == 'm' && *(s + 1) == 'e' && *(s + 2) == 't'
+				&& *(s + 3) == 'h';
+	}
+
+	tLangNode* func() {
+		__tGoInto("func");
+		tLangNode *res = new tLangNode("func");
+
+		s += 6; //method
+		E();
+		s++; //(
+		E();
+		res->addChild(name());
+		E();
+		s++; //)
+		E();
+		res->addChild(name());
+		E();
+		res->addChild(block());
+		E();
+
+		__tGoOut();
+		return res;
+	}
+
+	tLangNode* statement() {
+		__tGoInto("statement");
+		bool ifs__ = ifs_();
+		bool block__ = block_();
+		bool whiles__ = whiles_();
+
+		tLangNode *res = NULL;
+		if (ifs__) {
+			res = ifs();
+		}
+		if (block__) {
+			res = block();
+		}
+		if (whiles__) {
+			res = whiles();
+		}
+		E();
+		__tGoOut();
+		return res;
+	}
+
+	bool whiles_() {
+		return *s == 'w' && *(s + 1) == 'h' && *(s + 2) == 'i'
+				&& *(s + 3) == 'l' && *(s + 4) == 'e';
+	}
+
+	tLangNode* ifs() {
+		__tGoInto("ifs");
+		s += 2; // if
+		E();
+		s++; //(
+		tLangNode *res = new tLangNode("if");
+		E();
+		res->addChild(expr());
+		s++;
+		//)
+		E();
+		res->addChild(block());
+		__tGoOut();
+		return res;
+	}
+
+	bool ifs_() {
+		return *s == 'i' && *(s + 1) == 'f';
+	}
+
+	bool returns_() {
+		return *(s) == 'r' && *(s + 1) == 'e' && *(s + 2) == 't'
+				&& *(s + 3) == 'u';
+	}
+
+	tLangNode* returns() {
+		__tGoInto("return");
+		tLangNode *res = new tLangNode("return");
+
+		s += 6; //return
+
+		E();
+		res->addChild(expr());
+		E();
+
+		__tGoOut();
+		return res;
+	}
+
+	tLangNode* useFunc() {
+		__tGoInto("useFunc");
+		tLangNode *res = new tLangNode("useFunc");
+
+		s += 7; //usefunc
+
+		E();
+
+		res->addChild(name());
+
+		s++; //(
+
+		E();
+
+		if (expr_()) {
+			res->addChild(expr());
+			E();
+			while (*s == ',') {
+				s++; //,
+				E();
+				res->addChild(expr());
+				E();
+			}
+		}
+
+		s++; //)
+
+		__tGoOut();
+		return res;
+	}
+
+	tLangNode* whiles() {
+		tLangNode *res = new tLangNode("while");
+		s += 5; //while
+
+		E();
+		s++; //(
+
+		E();
+
+		res->addChild(expr());
+
+		s++; //)
+		E();
+
+		res->addChild(block());
+
+		return res;
+	}
+
 	tLangNode* block() {
 		__tGoInto("block");
 		s++; //{
 		tLangNode *nd = new tLangNode("{}");
 		E();
-		while (*s != '}' && (action_() || block_())) {
+		while (*s != '}' && (action_() || statement_())) {
 			bool action__ = action_();
-			bool block__ = block_();
+			bool block__ = statement_();
 			if (action__) {
 				nd->addChild(action());
 				E();
 				s++; //;
 			}
 			if (block__) {
-				nd->addChild(block());
+				nd->addChild(statement());
 			}
 			E();
 		}
@@ -124,6 +277,10 @@ public:
 		return nd;
 	}
 
+	bool statement_() {
+		return ifs_() || block_() || whiles_();
+	}
+
 	bool block_() {
 		return *s == '{';
 	}
@@ -132,7 +289,8 @@ public:
 		__tGoInto("action");
 		bool assign__ = assign_();
 		bool create__ = create_();
-		bool out__ = out_();
+		bool useFunc__ = useFunc_();
+		bool returns__ = returns_();
 
 		tLangNode *res = NULL;
 
@@ -142,16 +300,20 @@ public:
 		if (create__) {
 			res = create();
 		}
-		if (out__) {
-			res = out();
+		if (useFunc__) {
+			res = useFunc();
 		}
-		__tGoOut();
+		if (returns__) {
+			res = returns();
+		}
 
+		__tGoOut();
 		return res;
 	}
 
 	bool action_() {
-		return assign_() || create_() || out_();
+		return (assign_() || create_() || useFunc_() || returns_())
+				&& !statement_();
 	}
 
 	tLangNode* assign() {
@@ -170,7 +332,7 @@ public:
 	}
 
 	bool assign_() {
-		return name_() && !create_() && !out_();
+		return name_() && !create_() && !useFunc_() && !returns_();
 	}
 
 	tLangNode* create() {
@@ -270,11 +432,12 @@ public:
 	}
 
 	bool P_() {
-		return (*s == '(' || V_());
+		return (*s == '(' || V_() || useFunc_());
 	}
 
 	bool name_() {
-		return *s <= 'z' && 'a' <= *s;
+		return (*s <= 'Z' && *s >= 'A') || (*s <= 'z' && *s >= 'a')
+				 || *s == '_';
 	}
 
 	tLangNode* name() {
@@ -283,7 +446,8 @@ public:
 
 		result += *s;
 		s++;
-		while ((*s <= 'z' && *s >= 'a') || ('0' <= *s && *s <= '9') || *s == '_') {
+		while ((*s <= 'Z' && *s >= 'A') || (*s <= 'z' && *s >= 'a')
+				|| ('0' <= *s && *s <= '9') || *s == '_') {
 			result += *s;
 			s++;
 		}
@@ -299,19 +463,9 @@ public:
 		return T_();
 	}
 
-	bool out_() {
-		return *s == 'o' && *(s + 1) == 'u' && *(s + 2) == 't';
-	}
-
-	tLangNode* out() {
-		__tGoInto("out");
-		tLangNode *res = new tLangNode("out");
-		s += 3;
-		E();
-		res->addChild(name());
-		__tGoOut();
-
-		return res;
+	bool useFunc_() {
+		return *s == 'u' && *(s + 1) == 's' && *(s + 2) == 'e'
+				&& *(s + 3) == 'F';
 	}
 
 	bool V_() {
@@ -320,16 +474,22 @@ public:
 
 	tLangNode* V() {
 		__tGoInto("V");
-		bool name__ = name_();
+		bool name__ = name_() && !useFunc_();
 		bool N__ = N_();
+		bool useFunc__ = useFunc_();
 
-		tLangNode *res = new tLangNode("VALUE");
+		tLangNode *res = NULL;
 
 		if (name__) {
+			res = new tLangNode("VAR_VALUE");
 			res->addChild(name());
 		}
 		if (N__) {
+			res = new tLangNode("NUM_VALUE");
 			res->addChild(N());
+		}
+		if (useFunc__) {
+			res = (useFunc());
 		}
 		__tGoOut();
 
@@ -369,45 +529,69 @@ public:
 
 };
 
-struct ttType {
+struct tLangType {
 	unsigned size;
 	tString name;
 
 	tString (*add)(tString, tString);
 	tString (*mul)(tString, tString);
-	tString (*sub)(tString, tString);
+	tString (*neg)(tString);
 	tString (*div)(tString, tString);
 	tString (*toBytes)(tString);
 	tString (*fromBytes)(tString);
 
-	ttType() :
-			size(0), name(), add(NULL), mul(NULL), sub(NULL), div(NULL), toBytes(
+	tLangType() :
+			size(0), name(), add(NULL), mul(NULL), neg(NULL), div(NULL), toBytes(
 			NULL), fromBytes(NULL) {
 	}
 
-	ttType(unsigned sz, tString nm, tString (*add_)(tString, tString),
-			tString (*mul_)(tString, tString), tString sub_(tString, tString),
+	tLangType(unsigned sz, tString nm, tString (*add_)(tString, tString),
+			tString (*mul_)(tString, tString), tString neg_(tString),
 			tString (*div_)(tString, tString), tString (*toString_)(tString),
 			tString (*fromString_)(tString)) :
-			size(sz), name(nm), add(add_), mul(mul_), sub(sub_), div(div_), toBytes(
+			size(sz), name(nm), add(add_), mul(mul_), neg(neg_), div(div_), toBytes(
 					toString_), fromBytes(fromString_) {
 	}
 
-	int operator<(ttType &other) {
+	int operator<(tLangType &other) {
 		return name < other.name;
 	}
 };
 
 struct tVariable {
-	ttType *type;
+	tLangType *type;
 	tString value;
 	tString name;
 
-	tVariable(ttType *type_, tString name_) :
+	tVariable(tLangType *type_, tString name_) :
 			type(type_), value(), name(name_) {
 
 	}
 };
+
+struct tMethod {
+	tString (*func)(tString*);
+	tLangNode *start;
+	unsigned argsQuant;
+	tString name;
+	tLangType *return_type;
+
+	tMethod(tString (*f)(tString*), unsigned args, tString name_,
+			tLangType *ret) :
+			func(f), start(NULL), argsQuant(args), name(name_), return_type(ret) {
+	}
+
+	tMethod(tLangNode *st, unsigned args, tString name_, tLangType *ret) :
+			func(NULL), start(st), argsQuant(args), name(name_), return_type(
+					ret) {
+	}
+};
+
+tLangType *tINT = NULL;
+
+#define METHOD(NAME, ARGS, CODE, RET_TYPE) tString NAME (tString * args) {CODE}
+#include "Patterns/DEFAULT_FUNCS"
+#undef METHOD
 
 class tLangCompiler {
 
@@ -415,13 +599,18 @@ class tLangCompiler {
 	tLangNode *root;
 
 	// Types for variables
-	map<tString, ttType*> types;
+	map<tString, tLangType*> types;
 
 	// Variables
 	map<tString, tVariable*> vars;
 
+	// Functions
+	map<tString, tMethod*> funcs;
+	tString return_value = { };
+	tMethod *currentMethod = NULL;
+
 	// Current type
-	ttType *currentType = NULL;
+	tLangType *currentType = NULL;
 	tVariable *currentVar = NULL;
 
 public:
@@ -430,8 +619,8 @@ public:
 			root(rt), types( { }) {
 
 		// Initializing standard types
-#define TYPE(NAME, SIZE, ADD, SUB, MUL, DIV, TO_BTS, FROM_BTS) types[tString(#NAME)] = new ttType(SIZE, tString(#NAME), \
-		[](tString f, tString s) {ADD;}, [] (tString f, tString s) {MUL;}, [] (tString f, tString s) {SUB;}, \
+#define TYPE(NAME, SIZE, ADD, MUL, NEG, DIV, TO_BTS, FROM_BTS) types[tString(#NAME)] = new tLangType(SIZE, tString(#NAME), \
+		[](tString f, tString s) {ADD;}, [] (tString f, tString s) {MUL;}, [] (tString f) {NEG;}, \
 				[] (tString f, tString s) {DIV;}, [] (tString data) {TO_BTS;}, [] (tString data) { FROM_BTS;});
 #define A(S) S.__array()
 #define CONV(TP, STR) (*(TP*)( A(STR) ))
@@ -440,25 +629,34 @@ public:
 #undef A
 #undef TYPE
 
+		// Initializing standart methods
+#define METHOD(NAME, ARGS, CODE, RET_TYPE) {tString (*f)(tString*) = NAME; funcs[tString(#NAME)] = new tMethod(f, ARGS, tString(#NAME), types[#RET_TYPE]);}
+#include "Patterns/DEFAULT_FUNCS"
+#undef METHOD
+
+		tINT = types["int"];
+	}
+
+	~tLangCompiler() {
+		types.~map();
+		vars.~map();
 	}
 
 	tString run(tLangNode *cur = NULL) {
-
 		if (cur == NULL) {
 			cur = root;
 		}
+		__tGoInto(cur->name);
 
-		//__tGoInto(cur->name);
+		tString res = cur->name;
 
-		//cur->name.out();
-
-#define RETURN return//__tGoOut(); return
 #define OPERATOR(NAME, CODE) if (cur->name == tString(#NAME)) {CODE;}
 #include "Patterns/OPERATORS"
 #undef OPERATOR
 
+		__tGoOut();
 
-		RETURN cur->name;
+		return res;
 	}
 
 };
