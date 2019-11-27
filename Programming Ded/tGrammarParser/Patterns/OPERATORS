@@ -6,7 +6,7 @@
 
 OPERATOR(=, {
 	tLangType * prev_tp = currentType;
-	tVariable * prev_var = currentVar;
+	tLangVariable * prev_var = currentVar;
 	currentVar = vars[run(CHILD(0))];
 	currentType = currentVar->type;
 	
@@ -44,13 +44,13 @@ OPERATOR(useFunc, {
 	if (funcs.count(name) == 0) {
 		tThrowException("NO SUCH METHOD!");
 	}
-	tMethod * met = funcs[name];
+	tLangMethod * met = funcs[name];
 	tString * args = new tString[met->argsQuant];
 	for (unsigned i = 1; i < TOTAL_CHILDREN; i++) {
 		args[i - 1] = run(CHILD(i));
 	}
 	
-	tMethod * prev = currentMethod;
+	tLangMethod * prev = currentMethod;
 	currentMethod = met;
 	
 	if (met->func != NULL) {
@@ -74,7 +74,7 @@ OPERATOR({}, {
 OPERATOR(var, {
 	tString var_type = run(CHILD(0));
 	tString var_name = run(CHILD(1));
-	tVariable * vr = new tVariable(types[var_type], var_name);
+	tLangVariable * vr = new tLangVariable(types[var_type], var_name);
 	vars[var_name] = vr;
 })
 OPERATOR(*, {
@@ -104,7 +104,7 @@ OPERATOR(/, {
 	res = v1;
 })
 OPERATOR(code, {
-	tMethod * main = NULL;
+	tLangMethod * main = NULL;
 
 	for (unsigned i = 0; i < TOTAL_CHILDREN; i++) {
 		tLangNode * f = CHILD(i);
@@ -116,7 +116,7 @@ OPERATOR(code, {
 		
 		tLangNode * code = f->children[2];
 		
-		funcs[nm] = new tMethod(code, 0, nm, tp);
+		funcs[nm] = new tLangMethod(code, 0, nm, tp);
 		
 		if (nm == "main") {
 			main = funcs[nm];

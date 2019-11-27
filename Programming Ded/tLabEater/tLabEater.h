@@ -11,7 +11,7 @@ using namespace tExpressionHandler;
 
 using std::cout;
 
-struct tVariable {
+struct tLangVariable {
 	double *values;
 	double *infilicity;
 	unsigned size;
@@ -32,8 +32,8 @@ struct tVariable {
 			values = new double[sz];
 			infilicity = new double[sz];
 		}
-		values = (double*) realloc(values, sz * sizeof(tVariable));
-		infilicity = (double*) realloc(infilicity, sz * sizeof(tVariable));
+		values = (double*) realloc(values, sz * sizeof(tLangVariable));
+		infilicity = (double*) realloc(infilicity, sz * sizeof(tLangVariable));
 
 		size = sz;
 	}
@@ -93,12 +93,12 @@ struct tVariable {
 	}
 };
 
-map<tString, tVariable*> variables = { };
+map<tString, tLangVariable*> variables = { };
 
-tVariable *current_var = NULL;
+tLangVariable *current_var = NULL;
 
-tVariable *a = NULL;
-tVariable *b = NULL;
+tLangVariable *a = NULL;
+tLangVariable *b = NULL;
 
 const char dividor[] = { ' ', ',', '\t', ';', '\n', '\r' };
 const unsigned total_dividors = 6;
@@ -309,7 +309,7 @@ void expr_assignment(tString line) {
 	cout << "Found variables: ";
 	unsigned max_size = 0;
 	for (unsigned i = 0; i < vars.tGetSize(); i++) {
-		tVariable *vr = variables[vars.tGet(i)];
+		tLangVariable *vr = variables[vars.tGet(i)];
 		vr->name.tWrite();
 		max_size = tMax(max_size, vr->size);
 		cout << "[" << vr->size << "]";
@@ -365,11 +365,11 @@ void make_array(tString line) {
 	tString *divs = str.tParse(dividor, total_dividors, total_divs);
 
 	if (variables.count(divs[0]) == 0) {
-		variables[divs[0]] = new tVariable(divs[0]);
+		variables[divs[0]] = new tLangVariable(divs[0]);
 	}
 	current_var = variables[divs[0]];
 	for (unsigned i = 1; i < total_divs; i++) {
-		tVariable *vr = variables[divs[i]];
+		tLangVariable *vr = variables[divs[i]];
 		unsigned beg = current_var->size;
 		current_var->setSize(vr->size + beg);
 		for (unsigned i = 0; i < vr->size; i++) {
@@ -400,8 +400,8 @@ void sum(tString line) {
 	cout << ".\n";
 	cout.flush();
 
-	tVariable *from_ = variables[from];
-	tVariable *to_ = variables[to];
+	tLangVariable *from_ = variables[from];
+	tLangVariable *to_ = variables[to];
 
 	double sum = 0;
 	double inf = 0;
@@ -435,8 +435,8 @@ void least_squares(tString line) {
 	tString y_nm = line.tSubstring(line.firstPosition(',') + 1,
 			line.firstPosition(']') - 1);
 
-	tVariable *x = variables[x_nm];
-	tVariable *y = variables[y_nm];
+	tLangVariable *x = variables[x_nm];
+	tLangVariable *y = variables[y_nm];
 
 	if (x->size != y->size) {
 		tThrowException("Array sizes are not equals!");
@@ -448,13 +448,13 @@ void least_squares(tString line) {
 
 //! This function finds a variable in a string, or rather tries to find it;
 //! if there is an equal sign, then everything that stands before this sign will be considered a change.
-tVariable* findVar(tString line) {
+tLangVariable* findVar(tString line) {
 	if (line.tCount('=') > 0) {
 		cout << "Loading variable: ";
 		tString nm = line.tSubstring(0, line.firstPosition('=') - 1);
 		nm.out();
 		if (variables.count(nm) == 0) {
-			variables[nm] = new tVariable(nm);
+			variables[nm] = new tLangVariable(nm);
 		}
 		return variables[nm];
 	}
@@ -469,8 +469,8 @@ void tParseLabEaterFile(tFile *in_file, tFile *out_file) {
 	tString NAME_A = tString('a');
 	tString NAME_B = tString('b');
 
-	a = variables[NAME_A] = new tVariable(NAME_A);
-	b = variables[NAME_B] = new tVariable(NAME_B);
+	a = variables[NAME_A] = new tLangVariable(NAME_A);
+	b = variables[NAME_B] = new tLangVariable(NAME_B);
 
 	a->setSize(1);
 	b->setSize(1);
