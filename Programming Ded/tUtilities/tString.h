@@ -28,13 +28,17 @@ map<unsigned, tPair<char*, unsigned>>* __tCurrentBranch() {
 	return __branches.tGetLastElement();
 }
 
-bool __tIsRunning() {
-	return __branches.tGetSize() > 0;
-}
-
 //! Creates new branch where all new tString objects will be stored.
 void __tNewBranch() {
 	__branches.tAddLast(new map<unsigned, tPair<char*, unsigned>>());
+}
+
+bool __tIsRunning() {
+	if (__branches.tGetSize() == 0) {
+		std::cout << "HEAD BRANCH NOT FOUND!!! IT WILL BE CREATED!!!\n";
+		__tNewBranch();
+	}
+	return __branches.tGetSize() > 0;
 }
 
 //! Deletes current branch and frees all tString object called after last __tNewBranch call.

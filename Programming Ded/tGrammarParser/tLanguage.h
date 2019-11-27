@@ -638,7 +638,7 @@ map<tString, tLangVariable*> vars;
 
 // Functions
 map<tString, tLangMethod*> funcs;
-tString return_value = { };
+tString return_value;
 tLangMethod *currentMethod = NULL;
 
 // Current type
@@ -646,6 +646,7 @@ tLangType *currentType = NULL;
 tLangVariable *currentVar = NULL;
 
 void init(tLangNode *rt) {
+	return_value = {};
 	root = rt;
 
 	// Initializing standard types
