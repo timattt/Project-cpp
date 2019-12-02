@@ -40,27 +40,37 @@ OPERATOR(return, {
 })
 OPERATOR(useFunc, {
 	tString name = run(CHILD(0));
-
+	tLangType * prev_t = currentType;
+	
 	if (funcs.count(name) == 0) {
 		tThrowException("NO SUCH METHOD!");
 	}
+
 	tLangMethod * met = funcs[name];
 	tString * args = new tString[met->argsQuant];
-	for (unsigned i = 1; i < TOTAL_CHILDREN; i++) {
-		args[i - 1] = run(CHILD(i));
+	for (unsigned i = 0; i < met->argsQuant; i++) {
+		currentType = met->args[i]->type;
+		args[i] = run(CHILD(i + 1));
 	}
 	
-	tLangMethod * prev = currentMethod;
+	tLangMethod * prev_m = currentMethod;
 	currentMethod = met;
-	
+
 	if (met->func != NULL) {
 		res = met->func(args);
 	} else {
+		newVarBranch();
+		for (unsigned i = 0; i < met->argsQuant; i++) {
+			vars[met->args[i]->name] = met->args[i];
+			vars[met->args[i]->name]->value = args[i];
+		}
 		run(met->start);
 		res = return_value;
+		flushBranch();
 	}
 	
-	currentMethod = prev;
+	currentType = prev_t;
+	currentMethod = prev_m;
 	
 	return_value = {};
 	
@@ -76,6 +86,7 @@ OPERATOR(var, {
 	tString var_name = run(CHILD(1));
 	tLangVariable * vr = new tLangVariable(types[var_type], var_name);
 	vars[var_name] = vr;
+	res = var_name;
 })
 OPERATOR(*, {
 
@@ -113,17 +124,24 @@ OPERATOR(code, {
 		tLangType * tp = (type_name == tString("void") ? NULL : types[type_name]);
 		
 		tString nm = run(f->children[1]);
+
+		tLangNode * code = f->children[f->size - 1];
 		
-		tLangNode * code = f->children[2];
-		
-		funcs[nm] = new tLangMethod(code, 0, nm, tp);
+		funcs[nm] = new tLangMethod(code, f->size - 3, nm, tp);
+
+		for (unsigned j = 2; j < f->size - 1; j++) {
+			funcs[nm]->args[j - 2] = vars[run(f->children[j])];
+			vars.erase(funcs[nm]->args[j - 2]);
+		}
 		
 		if (nm == "main") {
 			main = funcs[nm];
 		}
 	}
 	
+	newVarBranch();
 	run(main->start);
+	flushBranch();
 })
 OPERATOR(-, {
 	tString v1 = currentType->neg(run(CHILD(0)));

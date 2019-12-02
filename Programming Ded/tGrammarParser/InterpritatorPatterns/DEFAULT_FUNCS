@@ -1,0 +1,10 @@
+METHOD(out, 1, {
+	tString v = tINT->fromBytes(args[0]);
+	v.out();
+	return v;
+}, int, int)
+METHOD(in, 0, {
+	int v = 0;
+	cin >> v;
+	return tINT->toBytes(tString(v));
+}, int, int)

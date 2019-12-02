@@ -290,6 +290,8 @@ public:
 	//! Gives substring [start, end].
 	tString tSubstring(unsigned start, unsigned end) const {
 		if (start > end || end >= size()) {
+			std::cout << "THIS STRING WAS AS PARAMETER:\n";
+			out();
 			tThrowException("Out of string bounds!");
 		}
 

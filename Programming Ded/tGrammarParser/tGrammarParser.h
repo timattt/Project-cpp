@@ -1,56 +1,13 @@
-#ifndef T_LANG
-#define T_LANG
-
 #include "../tUtilities/tString.h"
 #include "../tUtilities/tUtilities.h"
 #include "../tUtilities/tCallTreeBuilder.h"
 #include "bits/stdc++.h"
 #include "../tStorage/tTreap.h"
+#include "tGrammarParserUtilities.h"
 
 using namespace std;
 using namespace tUtilities;
 using namespace tStorage;
-
-const unsigned MAX_CHILDREN = 200;
-
-class tLangNode {
-
-public:
-	tString name;
-
-	tLangNode *children[MAX_CHILDREN];
-
-	unsigned size = 0;
-
-	void dfs_out() {
-		__tGoInto(name);
-		for (unsigned i = 0; i < size; i++) {
-			children[i]->dfs_out();
-		}
-		__tGoOut();
-	}
-
-	tLangNode(tString str) :
-			name(str), size(0) {
-	}
-
-	//! Removes and gives last child.
-	tLangNode* pullLast() {
-		size--;
-		return children[size];
-	}
-
-	tLangNode(tString str, tLangNode *f, tLangNode *s) :
-			name(str), size(2) {
-		children[0] = f;
-		children[1] = s;
-	}
-
-	void addChild(tLangNode *ch) {
-		children[size++] = ch;
-	}
-
-};
 
 namespace tLangParser {
 
@@ -164,6 +121,14 @@ tLangNode* func() {
 	s++; //)
 	E();
 	res->addChild(name());
+	E();
+	s++; // (
+	E();
+	if (create_()) {
+		res->addChild(create());
+		E();
+	}
+	s++; //)
 	E();
 	res->addChild(block());
 	E();
@@ -607,84 +572,18 @@ struct tLangMethod {
 	unsigned argsQuant;
 	tString name;
 	tLangType *return_type;
+	tLangVariable **args;
 
-	tLangMethod(tString (*f)(tString*), unsigned args, tString name_,
+	tLangMethod(tString (*f)(tString*), unsigned args_q, tString name_,
 			tLangType *ret) :
-			func(f), start(NULL), argsQuant(args), name(name_), return_type(ret) {
+			func(f), start(NULL), argsQuant(args_q), name(name_), return_type(
+					ret), args(
+					(tLangVariable**) calloc(args_q, sizeof(tLangVariable*))) {
 	}
 
-	tLangMethod(tLangNode *st, unsigned args, tString name_, tLangType *ret) :
-			func(NULL), start(st), argsQuant(args), name(name_), return_type(
-					ret) {
+	tLangMethod(tLangNode *st, unsigned args_q, tString name_, tLangType *ret) :
+			func(NULL), start(st), argsQuant(args_q), name(name_), return_type(
+					ret), args(
+					(tLangVariable**) calloc(args_q, sizeof(tLangVariable*))) {
 	}
 };
-
-namespace tLangCompiler {
-
-tLangType *tINT = NULL;
-
-#define METHOD(NAME, ARGS, CODE, RET_TYPE) tString NAME (tString * args) {CODE}
-#include "Patterns/DEFAULT_FUNCS"
-#undef METHOD
-
-// Root of the code
-tLangNode *root;
-
-// Types for variables
-map<tString, tLangType*> types;
-
-// Variables
-map<tString, tLangVariable*> vars;
-
-// Functions
-map<tString, tLangMethod*> funcs;
-tString return_value;
-tLangMethod *currentMethod = NULL;
-
-// Current type
-tLangType *currentType = NULL;
-tLangVariable *currentVar = NULL;
-
-void init(tLangNode *rt) {
-	return_value = {};
-	root = rt;
-
-	// Initializing standard types
-#define TYPE(NAME, SIZE, ADD, MUL, NEG, DIV, TO_BTS, FROM_BTS) types[tString(#NAME)] = new tLangType(SIZE, tString(#NAME), \
-		[](tString f, tString s) {ADD;}, [] (tString f, tString s) {MUL;}, [] (tString f) {NEG;}, \
-				[] (tString f, tString s) {DIV;}, [] (tString data) {TO_BTS;}, [] (tString data) { FROM_BTS;});
-#define A(S) S.__array()
-#define CONV(TP, STR) (*(TP*)( A(STR) ))
-#include "Patterns/TYPES"
-#undef CONV
-#undef A
-#undef TYPE
-
-	// Initializing standart methods
-#define METHOD(NAME, ARGS, CODE, RET_TYPE) {tString (*f)(tString*) = NAME; funcs[tString(#NAME)] = new tLangMethod(f, ARGS, tString(#NAME), types[#RET_TYPE]);}
-#include "Patterns/DEFAULT_FUNCS"
-#undef METHOD
-
-	tINT = types["int"];
-}
-
-tString run(tLangNode *cur = NULL) {
-	if (cur == NULL) {
-		cur = root;
-	}
-	__tGoInto(cur->name);
-
-	tString res = cur->name;
-
-#define OPERATOR(NAME, CODE) if (cur->name == tString(#NAME)) {CODE;}
-#include "Patterns/OPERATORS"
-#undef OPERATOR
-
-	__tGoOut();
-
-	return res;
-}
-
-}
-
-#endif

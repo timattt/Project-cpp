@@ -174,6 +174,14 @@ public:
 		curr_map_byte = mapped_buffer;
 	}
 
+	tString tReadAll() {
+		tString res = {};
+		while (tHasMoreSymbs()) {
+			res += (tReadLine() + '\n');
+		}
+		return res;
+	}
+
 	//! Returns next char in file.
 	char tGetc() {
 		if (mapped_buffer == NULL) {
