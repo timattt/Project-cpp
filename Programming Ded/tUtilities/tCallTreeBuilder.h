@@ -13,7 +13,7 @@ namespace tUtilities {
 
 void __tFastStart();
 void __tFastEnd();
-void __tGoInto(tString lable);
+void __tGoInto(tString lable, unsigned color = 0);
 
 tList<tString> call_hierarchy = { };
 tFile *hierarchy_output = NULL;
@@ -32,7 +32,7 @@ void __tEndMonitoring() {
 	hierarchy_output = NULL;
 }
 
-void __tGoInto(tString lable) {
+void __tGoInto(tString lable, unsigned color) {
 	//std::cout << "Going into ";
 	//lable.out();
 
@@ -55,6 +55,21 @@ void __tGoInto(tString lable) {
 		line += call_hierarchy.tGetLastElement();
 		line += tString(" -> ");
 		line += name;
+
+		switch (color) {
+		case 1:
+			line += "[color=red]";
+			break;
+		case 2:
+			line += "[color=blue]";
+			break;
+		case 3:
+			line += "[color=green]";
+			break;
+		default:
+			break;
+		}
+
 	}
 
 	call_hierarchy.tAddLast(name);

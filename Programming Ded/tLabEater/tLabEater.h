@@ -12,17 +12,18 @@ using namespace tExpressionHandler;
 using std::cout;
 
 struct tLangVariable {
+
 	double *values;
 	double *infilicity;
 	unsigned size;
 	tString name;
 	tExprNode *expr;
 
-	tVariable(tString nm) :
+	tLangVariable(tString nm) :
 			values(NULL), infilicity(NULL), size(0), name(nm), expr(NULL) {
 	}
 
-	tVariable() :
+	tLangVariable() :
 			values(NULL), infilicity(NULL), size(0), name( { "NO_NAME" }), expr(
 			NULL) {
 	}
@@ -32,6 +33,7 @@ struct tLangVariable {
 			values = new double[sz];
 			infilicity = new double[sz];
 		}
+
 		values = (double*) realloc(values, sz * sizeof(tLangVariable));
 		infilicity = (double*) realloc(infilicity, sz * sizeof(tLangVariable));
 
@@ -137,11 +139,20 @@ void tCalculateFormula(tExprNode *expr, map<tString, double> values,
 	inf = std::sqrt(inf);
 
 	cout << "Infilicity: " << inf << "\n";
+	cout.flush();
+
+	int digits_before_dot = tString(inf).tRemoveFractTail().firstPosition('.')
+			+ 2;
+	inf /= pow(10.0, digits_before_dot);
+	ans /= pow(10.0, digits_before_dot);
 
 	int digits = tGetFirstSignificantDecimalPlace(inf);
 	cout << "Total digits: " << digits << "\n";
 	ans = tRoundTo(ans, digits);
 	inf = tRoundTo(inf, digits);
+
+	ans *= pow(10.0, digits_before_dot);
+	inf *= pow(10.0, digits_before_dot);
 
 	cout << "Final answer: " << ans << " +- " << inf << "\n";
 
@@ -355,6 +366,7 @@ void make_array(tString line) {
 	if (!line.tContains("make_array")) {
 		return;
 	}
+
 	tString str = line.tSubstring(line.firstPosition('[') + 1,
 			line.firstPosition(']') - 1);
 
@@ -368,14 +380,18 @@ void make_array(tString line) {
 		variables[divs[0]] = new tLangVariable(divs[0]);
 	}
 	current_var = variables[divs[0]];
+	current_var->setSize(0);
 	for (unsigned i = 1; i < total_divs; i++) {
+
 		tLangVariable *vr = variables[divs[i]];
 		unsigned beg = current_var->size;
 		current_var->setSize(vr->size + beg);
+
 		for (unsigned i = 0; i < vr->size; i++) {
 			current_var->values[i + beg] = vr->values[i];
 			current_var->infilicity[i + beg] = vr->infilicity[i];
 		}
+
 	}
 
 	delete divs;

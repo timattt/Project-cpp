@@ -228,6 +228,14 @@ public:
 		(*this) = (*this) + tString(c);
 	}
 
+	void operator+=(int c) {
+		(*this) = (*this) + tString(c);
+	}
+
+	void operator+=(unsigned c) {
+		(*this) = (*this) + tString(c);
+	}
+
 	tString operator+(tString other) const {
 		tString result = { };
 		result.tResize(size() + other.size());
