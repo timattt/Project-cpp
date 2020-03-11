@@ -47,6 +47,34 @@ fastExit:
 
 
 
+;--------------------------------------------------------------------------
+; Simply prints string into console
+; eax - pointer to this string, string may ends with 0Ah symbol
+;--------------------------------------------------------------------------
+tSimplePrintString:
+		push ebx
+		push eax
+		mov ebx, eax
+		
+T_SIMPLE_PRINT_STRING_LOOP:	
+		mov al, BYTE [ebx]		; cl now stores current symbol
+		cmp al, '$'			; if current symbol is 0Ah then return
+		je T_SIMPLE_PRINT_STRING_RETURN
+		
+		inc ebx					; ebx++
+		call fastOut
+		
+		jmp T_SIMPLE_PRINT_STRING_LOOP
+	
+T_SIMPLE_PRINT_STRING_RETURN:
+		pop eax
+		pop ebx
+		ret
+;--------------------------------------------------------------------------
+
+
+
+
 
 
 ;--------------------------------------------------------------------------
@@ -66,7 +94,14 @@ tPrintNumber:
     call tPrintNumber    ; Display the quotient
 T_PRINT_NUMBER_POINT:
     mov eax, edx
+	
+	cmp eax, 10d		; checking if this digit is bigger then 9 
+	jl T_PRINT_NUMBER_SKIP_SYMBOL_CONVERT 
+	add eax, 7d			; so we add 7 to skip some bad symbols
+T_PRINT_NUMBER_SKIP_SYMBOL_CONVERT:	
+	
 	add eax, '0'
+	
     call fastOut  		 ; Display the remainder
 	
 	pop ecx				; 
@@ -79,8 +114,8 @@ T_PRINT_NUMBER_POINT:
 
 ;--------------------------------------------------------------------------
 ; Standart printf function
-; Param: first - string
-;		 ... - arguments for this string
+; Param: first DWORD - string pointer
+;		 DWORD1, DWORD2... - arguments for this string
 ;
 ;--------------------------------------------------------------------------
 tPrintf:	push eax	;
@@ -100,7 +135,7 @@ T_PRINTF_LOOP:
 			;--------------------------------
 			; End of the loop
 			;--------------------------------
-			cmp ah, 0Ah
+			cmp ah, '$'
 			je T_PRINTF_LOOP_END
 			;--------------------------------
 			;--------------------------------
@@ -206,24 +241,30 @@ T_PRINTF_LOOP:
 			;---
 			
 			;---
+			; % symbol
+			;---
+			cmp ah, '%'
+			jne T_PRINTF_SO_PER_END
+			
+			mov eax, [esp + edx]					; eax now stores number to print
+			mov al, '%'
+			call fastOut
+			
+			jmp T_PRINTF_SPECIAL_OPERATION_END
+			T_PRINTF_SO_PER_END:
+			;---
+			
+			;---
 			; String
 			;---
 			cmp ah, 's'
 			jne T_PRINTF_SO_S_END
 			
 			mov eax, [esp + edx]					; eax now stores string to print
-			add edx, 4 								; edx += 8			next argument
-			
-			push esp								; saving sp and bp registers 
-			push ebp								; to restore safely other registers in the end
-			
-			push DWORD eax							; invoking printf function to print string
-			call tPrintf							;
-			
-			pop ebp									; flush trash data
-			pop ebp									; 
-			pop esp									; load sp and bp
-			
+			add edx, 4 								; edx += 8 next argument
+
+			call tSimplePrintString
+
 			jmp T_PRINTF_SPECIAL_OPERATION_END
 			T_PRINTF_SO_S_END:
 			;---
@@ -247,22 +288,19 @@ T_PRINTF_LOOP_END:
 				
 				
 ;--------------------------------------------------------------------------
-__start:    	push 1234h
+__start:    	push 21h
+				push 100d
+				push 3802d
 				push DWORD SecondString
-				push 1234o
-				push 1234d
-				push 'X'
-				push 100h - 1h
 				push DWORD TestString
 				
 				call tPrintf
-				
 				call fastExit
 ;--------------------------------------------------------------------------
 
 section .data
 FastOutText		db 0, 0Ah, 0
-TestString		db "Test printf! %b %c %d %o %s %x abc", 0Ah
-SecondString	db "Second", 0Ah
+TestString		db "I %s %x %d %% %c", '$'
+SecondString	db "Love", '$'
 
 
