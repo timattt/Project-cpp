@@ -9,12 +9,19 @@ using namespace tUtilities;
 
 namespace tMath {
 
+unsigned constr = 0, destr = 0;
+
+void info() {
+	cout << "total " << constr << " constructors and " << destr << " destructors\n";
+}
+
 template<typename T = int> class tNumber {
 public:
 	T core;
 
 	tNumber() {
-		std::cout << "Contructor 1\n";
+		//std::cout << "Contructor 1\n";
+		constr++;
 	}
 
 	tString tToString() {
@@ -23,11 +30,13 @@ public:
 
 	tNumber(T cr) {
 		core = cr;
-		std::cout << "Contructor 2, " << core << "\n";
+		//std::cout << "Contructor 2, " << core << "\n";
+		constr++;
 	}
 
 	~tNumber() {
-		std::cout << "Destructor, " << core << "\n";
+		//std::cout << "Destructor, " << core << "\n";
+		destr++;
 	}
 
 	tNumber operator=(T cr) {

@@ -1,7 +1,6 @@
 #ifndef T_VECTOR
 #define T_VECTOR
 
-#include "../tUtilities/tUtilities.h"
 #include "../tUtilities/tString.h"
 
 using namespace tUtilities;
@@ -22,16 +21,27 @@ public:
 
 	}
 
-	// pushes back element lvalue reference
+	// pushes back element lvalue reference.
+	// there will be made copy actually.
 	void tPush_back(const T &elem) {
 		change_size(size + 1);
+		// simply copies
 		tWriteBytes(elem, mem + (size - 1) * sizeof(T));
 	}
 
-	// pushes back element rvalue reference
-	void tPush_back(T && elem) {
+	// pushes back element rvalue reference.
+	// in this way function steals data from given reference
+	void tPush_back(T &&elem) {
 		change_size(size + 1);
-		tWriteBytes_rvalue(elem, mem + (size - 1) * sizeof(T));
+
+		char * beg = (char*) (&elem);
+		for (unsigned i = 0; i < sizeof(T); i++) {
+			// steals data
+			*(mem + (size - 1) * sizeof(T) + i) = beg[i];
+
+			// and destroys it in its owner
+			beg[i] = 0;
+		}
 	}
 
 	T& operator[](unsigned ind) {
