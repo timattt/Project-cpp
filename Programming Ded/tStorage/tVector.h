@@ -22,10 +22,16 @@ public:
 
 	}
 
-	// pushes back element
+	// pushes back element lvalue reference
 	void tPush_back(const T &elem) {
 		change_size(size + 1);
 		tWriteBytes(elem, mem + (size - 1) * sizeof(T));
+	}
+
+	// pushes back element rvalue reference
+	void tPush_back(T && elem) {
+		change_size(size + 1);
+		tWriteBytes_rvalue(elem, mem + (size - 1) * sizeof(T));
 	}
 
 	T& operator[](unsigned ind) {

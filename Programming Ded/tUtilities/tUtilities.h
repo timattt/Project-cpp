@@ -48,6 +48,12 @@ public:
 	template<typename T> void __tWriteBytes(const T &elem, char *dest) {
 		new (dest) T(elem);
 	}
+	template<typename T> void __tWriteBytes_rvalue(T &&elem, char *dest) {
+		char * beg = (char*)(&elem);
+		for (unsigned i = 0; i < sizeof(T); i++) {
+			dest[i] = beg[i];
+		}
+	}
 } __mem__;
 }
 
@@ -82,21 +88,6 @@ unsigned tGetFirstSignificantDecimalPlace(double val) {
 double tCeiling(double val) {
 	double floor = tFloor(val);
 	return (val - floor > 0 ? floor + 1 : floor);
-}
-
-double tRoundTo(double val, unsigned digs) {
-	if (val == 0.0) {
-		return 0;
-	}
-	double sign = val / abs(val);
-	double val_ = abs(val);
-	double pow = std::pow(10, digs);
-	return sign * tFloor(val_ * pow + 0.5) / pow;
-}
-
-double tRoundToFirstDecimalPlace(double val) {
-	unsigned count = tGetFirstSignificantDecimalPlace(val);
-	return tRoundTo(val, count);
 }
 
 template<typename T> bool tCompare(const T *a, const T *b, unsigned len) {
@@ -139,6 +130,11 @@ void tSwapBuffers(char *a, char *b, unsigned len) {
 //! Writes element into given bytes array.
 template<typename T> void tWriteBytes(const T &elem, char *dest) {
 	__mem__.__tWriteBytes(elem, dest);
+}
+
+//! Writes element into given bytes array.
+template<typename T> void tWriteBytes_rvalue(T && elem, char *dest) {
+	__mem__.__tWriteBytes_rvalue(elem, dest);
 }
 
 //! Converts data from byte array into any element.
