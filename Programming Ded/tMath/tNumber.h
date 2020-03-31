@@ -12,7 +12,8 @@ namespace tMath {
 unsigned constr = 0, destr = 0;
 
 void info() {
-	cout << "total " << constr << " constructors and " << destr << " destructors\n";
+	cout << "total " << constr << " constructors and " << destr
+			<< " destructors\n";
 }
 
 template<typename T = int> class tNumber {
@@ -22,6 +23,12 @@ public:
 	tNumber() {
 		//std::cout << "Contructor 1\n";
 		constr++;
+	}
+
+	tNumber(const tNumber & tn) {
+		//std::cout << "Contructor 1\n";
+		constr++;
+		core = tn.core;
 	}
 
 	tString tToString() {
@@ -39,7 +46,7 @@ public:
 		destr++;
 	}
 
-	tNumber operator=(T cr) {
+	tNumber operator=(tNumber cr) {
 		return {cr};
 	}
 
