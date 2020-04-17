@@ -175,7 +175,7 @@ public:
 	}
 
 	tString tReadAll() {
-		tString res = {};
+		tString res = { };
 		while (tHasMoreSymbs()) {
 			res += (tReadLine() + '\n');
 		}
@@ -265,6 +265,12 @@ public:
 			tThrowException("Not mapped!");
 		}
 		return curr_map_byte < mapped_buffer + sizeBytes;
+	}
+
+	void tFill(char pat) {
+		for (unsigned i = 0; i < sizeBytes; i++) {
+			mapped_buffer[i] = pat;
+		}
 	}
 
 	void tPrintBytes() {

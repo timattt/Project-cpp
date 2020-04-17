@@ -5,6 +5,36 @@ T_PROC_FUNC(push, 40, {
 			HAVE_TWO_ARGS(
 					ARG1 = ARG2;
 			)
+		}, {
+
+			arg1.isRelative = 0;
+
+			if (arg1.isPointer == 0) {
+				if (arg1.type == 0) {
+					WB(0x68)
+					WDW(arg1.value)
+				}
+				if (arg1.type == 1) {
+					switch (arg1.value) {
+						case 2 : WB(0x50) break; //ax
+						case 3 : WB(0x53) break;//bx
+						case 4 : WB(0x51) break;//cx
+					}
+				}
+			} else {
+				if (arg1.type == 0) {
+					WB(0xff)
+					WB(0x35)
+					WDW(arg1.value)
+				}
+				if (arg1.type == 1) {
+					switch (arg1.value) {
+						case 2 : WB(0xff)WB(0x30) break; //ax
+						case 3 : WB(0xff)WB(0x33) break;//bx
+						case 4 : WB(0xff)WB(0x31) break;//cx
+					}
+				}
+			}
 		})
 
 // No args: Pops value from stack and prints it.
@@ -13,11 +43,43 @@ T_PROC_FUNC(out, 41, {
 			NO_ARGS(cout << POP << "\n")
 			HAVE_ARGS
 			(
-				FOR_EACH_ARG
-				(
-					cout << ARG << "\n";
-				)
+					FOR_EACH_ARG
+					(
+							cout << ARG << "\n";
+					)
 			)
+		}, {
+			arg1.marker_delta = 10;
+			maker->pushRegs();
+			if (arg1.isPointer == 0) {
+				if (arg1.type == 0) {
+					WB(0xb8)
+					WDW(arg1.value)
+				}
+				if (arg1.type == 1) {
+					WB(0x89);
+					switch (arg1.value) {
+						case 2 : WB(0xc0) break; //ax
+						case 3 : WB(0xd8) break;//bx
+						case 4 : WB(0xc8) break;//cx
+					}
+				}
+			} else {
+				if (arg1.type == 0) {
+					WB(0xa1)
+					WDW(arg1.value)
+				}
+				if (arg1.type == 1) {
+					WB(0x8b);
+					switch (arg1.value) {
+						case 2 : WB(0x00) break; //ax
+						case 3 : WB(0x03) break;//bx
+						case 4 : WB(0x01) break;//cx
+					}
+				}
+			}
+			maker->callDefaultOutFunction();
+			maker->popRegs();
 		})
 // No args: Pushes value readen from console.
 // Have args: Reads values from screen and stores them in given args.
@@ -30,7 +92,114 @@ T_PROC_FUNC(in, 42, {
 							cin >> ARG;
 					)
 			)
+		}, {
+
+			if (arg1.type == 1) {
+				if (arg1.value != 2) {
+					maker->pushEAX();
+				}
+				maker->callDefaultInFunction();
+				WB(0x89)
+				switch (arg1.value) {
+					case 2 : WB(0xc0)break;
+					case 3 : WB(0xc3)break;
+					case 4 : WB(0xc1)break;
+				}
+				if (arg1.value != 2) {
+					maker->popEAX();
+				}
+			} else {
+				arg1.marker_delta = 5;
+				maker->pushRegs();
+				maker->callDefaultInFunction();
+				WB(0xa3)
+				WDW(0)
+				maker->popRegs();
+			}
+
 		})
+
+T_PROC_FUNC(mov, 43, {}, {
+			arg2.marker_delta = 4;
+			arg1.marker_delta = 4;
+
+			if (arg1.type == 1 && arg1.value == 2) {
+				if (arg2.type == 1 && arg2.value == 3) {
+					WB(0x89)WB(0xd8) //mov eax, ebx
+				}
+				if (arg2.type == 1 && arg2.value == 4) {
+					WB(0x89)WB(0xc8) //mov eax, ecx
+				}
+			}
+
+			if (arg1.type == 1 && arg1.value == 3) {
+				if (arg2.type == 1 && arg2.value == 2) {
+					WB(0x89)WB(0xc3) //mov ebx, eax
+				}
+				if (arg2.type == 1 && arg2.value == 4) {
+					WB(0x89)WB(0xcb) //mov ebx, ecx
+				}
+			}
+			if (arg1.type == 1 && arg1.value == 4) {
+				if (arg2.type == 1 && arg2.value == 2) {
+					WB(0x89)WB(0xc1) //mov ecx, eax
+				}
+				if (arg2.type == 1 && arg2.value == 3) {
+					WB(0x89)WB(0xd9) //mov ecx, ebx
+				}
+			}
+			// reg <- constant
+			if (arg1.type == 1 && arg2.type == 0 && arg2.isPointer == 0) {
+				if (arg1.value == 2) {
+					WB(0xb8)WDW(arg2.value) //eax
+				}
+				if (arg1.value == 3) {
+					WB(0xbb)WDW(arg2.value) //ebx
+				}
+				if (arg1.value == 4) {
+					WB(0xb9)WDW(arg2.value) //ecx
+				}
+			}
+
+			// reg <- pointer of constant
+			if (arg1.type == 1 && arg2.type == 0 && arg2.isPointer == 1) {
+				if (arg1.value == 2) {
+					WB(0xa1)WDW(arg2.value)
+				}
+				if (arg1.value == 3) {
+					WB(0x8b)WB(0x1d)WDW(arg2.value)
+				}
+				if (arg1.value == 4) {
+					WB(0x8b)WB(0x0d)WDW(arg2.value)
+				}
+			}
+
+			// pointer of constant <- reg
+			if (arg1.type == 0 && arg1.isPointer == 1) {
+				if (arg2.type == 1) {
+					switch (arg2.value) {
+						case 2: WB(0xa3)WDW(0)break;
+						case 3: WB(0x89)WB(0x1d)WDW(0)break;
+						case 4: WB(0x89)WB(0x0d)WDW(0)break;
+					}
+				}
+			}
+
+			// constant into pointer of constant
+			if (arg1.type == 0 && arg2.type == 0 && arg1.isPointer == 1 && arg2.isPointer == 0) {
+				maker->pushRegs();
+				WB(0xb8)WDW(arg2.value)
+				WB(0xa3)WDW(arg1.value)
+				maker->popRegs();
+			}
+			if (arg1.type == 0 && arg2.type == 0 && arg1.isPointer == 1 && arg2.isPointer == 1) {
+				WB(0xa1)WDW(0)
+				WB(0xa3)WDW(0)
+				arg1.marker_delta = 4;
+				arg2.marker_delta = 9;
+			}
+		})
+
 // No args: Pops one element 
 // Have args: Pops values from stack into given arguments.
 T_PROC_FUNC(pop, 43, {
@@ -42,7 +211,35 @@ T_PROC_FUNC(pop, 43, {
 							ARG = POP;
 					)
 			)
+		}, {
+			arg1.isRelative = 0;
+
+			if (arg1.isPointer == 0) {
+				if (arg1.type == 1) {
+					switch (arg1.value) {
+						case 2 : WB(0x58) break; //ax
+						case 3 : WB(0x5b) break;//bx
+						case 4 : WB(0x59) break;//cx
+					}
+				}
+			} else {
+				if (arg1.type == 0) {
+					WB(0x8f)
+					WB(0x05)
+					WDW(arg1.value)
+				}
+				if (arg1.type == 1) {
+					WB(0x8f)
+					switch (arg1.value) {
+						case 2 : WB(0x00) break; //ax
+						case 3 : WB(0x03) break;//bx
+						case 4 : WB(0x01) break;//cx
+					}
+				}
+			}
+
 		})
+
 // No args: Pops two values from stack and pushes their sum.
 // Have args: Sums all arguments and pushes result into stack.
 T_PROC_FUNC(add, 44, {
@@ -56,6 +253,87 @@ T_PROC_FUNC(add, 44, {
 					PUSH(RESULT);
 			)
 			NO_ARGS(PUSH(POP + POP))
+		}, {
+			// reg + reg
+			if (arg1.value == 2) {
+				if (arg2.value == 3) {
+					WB(0x01)WB(0xd8)
+				}
+				if (arg2.value == 4) {
+					WB(0x01)WB(0xc8)
+				}
+			}
+			if (arg1.value == 3) {
+				if (arg2.value == 2) {
+					WB(0x01)WB(0xc3)
+				}
+				if (arg2.value == 4) {
+					WB(0x01)WB(0xcb)
+				}
+			}
+			if (arg1.value == 4) {
+				if (arg2.value == 2) {
+					WB(0x01)WB(0xc1)
+				}
+				if (arg2.value == 3) {
+					WB(0x01)WB(0xd9)
+				}
+			}
+
+			// const ptr + reg
+			if (arg1.isPointer == 1 && arg1.type == 0 && arg2.type == 1) {
+				arg1.marker_delta = 4;
+				switch (arg2.value) {
+					case 2 : WB(0x03)WB(0x05)WDW(0)break;
+					case 3: WB(0x03)WB(0x1d)WDW(0)break;
+					case 4: WB(0x03)WB(0x0d)WDW(0)break;
+				}
+			}
+
+			// reg + const ptr
+			if (arg2.isPointer == 1 && arg2.type == 0 && arg1.type == 1) {
+				arg2.marker_delta = 4;
+				switch (arg1.value) {
+					case 2: WB(0x01)WB(0x05)WDW(0)break;
+					case 3: WB(0x01)WB(0x1d)WDW(0)break;
+					case 4: WB(0x01)WB(0x0d)WDW(0)break;
+				}
+			}
+
+			// const ptr + const ptr
+			if (arg1.isPointer && arg1.type == 0 && arg2.isPointer && arg2.type == 0) {
+				maker->pushRegs();
+				WB(0x31)WB(0xc0) // xor eax, eax
+				WB(0xbb)WDW(0)//mov ebx, p1
+				WB(0xb9)WDW(0)//mov ecx, p2
+				WB(0x03)WB(0x03)//add eax, [ebx]
+				WB(0x03)WB(0x01)//add eax, [ecx]
+				WB(0x89)WB(0x03)//mov [ebx], eax
+				maker->popRegs();
+				arg1.marker_delta = 16;
+				arg2.marker_delta = 11;
+
+			}
+
+		})
+T_PROC_FUNC(db, 233, {}, {
+			for (int i = 0; i < total_args; i++) {
+				WB(args[i].value);
+			}
+		})
+T_PROC_FUNC(cmp, 222, {}, {
+			if (arg1.type == 1 && arg2.type == 1) {
+				if ((arg1.value == 2 && arg2.value == 3) || (arg1.value == 3 && arg2.value == 2)) {
+					WB(0x39)WB(0xd8)
+				}
+				if ((arg1.value == 2 && arg2.value == 4) || (arg1.value == 4 && arg2.value == 2)) {
+					WB(0x39)WB(0xc8)
+				}
+				if ((arg1.value == 3 && arg2.value == 4) || (arg1.value == 4 && arg2.value== 3)) {
+					WB(0x39)WB(0xcb)
+				}
+
+			}
 		})
 // No args: Pops two values from stack and pushes their sum.
 // Have args: Multiplies all arguments and pushes result into stack.
@@ -70,7 +348,7 @@ T_PROC_FUNC(mul, 45, {
 					PUSH(RESULT);
 			)
 			NO_ARGS(PUSH(POP * POP))
-		})
+		}, {})
 // No args: pops from stack value and pushes into stack its square root.
 // One arg: pushes into stack sqrt of this argument.
 T_PROC_FUNC(sqrt, 46, {
@@ -82,7 +360,7 @@ T_PROC_FUNC(sqrt, 46, {
 			(
 					PUSH(std::sqrt(POP))
 			)
-		})
+		}, {})
 // No args: pops value and pushes its negated value.
 // One arg: pushes negated value of argument.
 T_PROC_FUNC(neg, 47, {
@@ -94,7 +372,7 @@ T_PROC_FUNC(neg, 47, {
 			(
 					PUSH(-POP)
 			)
-		})
+		}, {})
 // No args: pops two values a1, a2 and pushes (a2 / a1)
 // Two args: pushes ARG1 / ARG2
 T_PROC_FUNC(div, 48, {
@@ -109,101 +387,123 @@ T_PROC_FUNC(div, 48, {
 			(
 					PUSH(ARG1 / ARG2)
 			)
-		})
+		}, {})
 // One arg: Moves processor carriage to given byte.		
 T_PROC_FUNC(jmp, 49, {
 			JMP(ARG1)
+		}, {
+			arg1.isRelative = 1;
+			arg1.marker_delta = 4;
+
+			WB(0xe9)WDW(0)
 		})
 // One arg: Pops two values from stack and if they are equal then jumps to given byte.
 // If argument quantity is not 1 then exception will be throwen.
 T_PROC_FUNC(je, 50, {
 			IF (TOTAL_ARGS != 1) THEN (
-				INV_ERROR
+					INV_ERROR
 			)
 			IF (POP == POP) THEN (
-				JMP(ARG1)
+					JMP(ARG1)
 			)
+		}, {
+			arg1.isRelative = 1;
+			arg1.marker_delta = 4;
+
+			WB(0x0f)WB(0x84)WDW(0)
 		})
 // One arg: Pops two values from stack and if they are not equal then jumps to given byte.
 // If argument quantity is not 1 then exception will be throwen.
 T_PROC_FUNC(jne, 51, {
 			IF(TOTAL_ARGS != 1) THEN
 			(
-				INV_ERROR
+					INV_ERROR
 			)
 			PROCESSOR_TYPE a = POP;
 			PROCESSOR_TYPE b = POP;
 			IF (a != b) THEN (
-				JMP(ARG1)
+					JMP(ARG1)
 			)
+		}, {
+			arg1.isRelative = 1;
+			arg1.marker_delta = 4;
+
+			WB(0x0f)WB(0x85)WDW(0)
 		})
 // One arg: calls target with location given in the parameter. Saves stacktrace.	
 // If argument quantity is not 1 then exception will be throwen.
 T_PROC_FUNC(call, 52, {
 			IF (TOTAL_ARGS != 1) THEN (
-				INV_ERROR
+					INV_ERROR
 			)
 			BYTE_IND return_point = proc->tGetCurrentByte();
 			BYTE_IND old_bp = BP;
-			
+
 			BP += 2;
-			
+
 			WRITE_RAM((BYTE_IND)BP, return_point);
 			WRITE_RAM((BYTE_IND)BP + 1, old_bp);
 
 			JMP(ARG1)
-			
+
 			IF (proc->code_size + sizeof(PROCESSOR_TYPE)*(BYTE_IND)BP >= RAM_SIZE) {
 				INV_ERROR
 			}
+		}, {
+			arg1.isRelative = 1;
+			arg1.marker_delta = 4;
+
+			WB(0xe8)WDW(0)
 		})
 // No args: Returns to line after call function was used.
 // If argument quantity is not 0 then exception will be throwen.
 T_PROC_FUNC(ret, 53, {
 			IF (TOTAL_ARGS != 0) THEN (
-				INV_ERROR
+					INV_ERROR
 			)
 
 			IF (BP == 0) THEN (
-				INV_ERROR
+					INV_ERROR
 			)
-			
+
 			BYTE_IND return_point = (BYTE_IND) GET_RAM((BYTE_IND)BP);
 			BYTE_IND old_bp = (BYTE_IND) GET_RAM((BYTE_IND)BP + 1);
-	
+
 			JMP(return_point);
 			BP = old_bp;
+		}, {
+			WB(0xc3)
 		})
 // No args: Moves carriage to the end of the program.
 // If argument quantity is not 0 then exception will be throwen.
 T_PROC_FUNC(end., 54, {
 			IF (TOTAL_ARGS != 0) THEN (
-				INV_ERROR
+					INV_ERROR
 			)
 			proc->tStop();
-		})
+		}, {})
 T_PROC_FUNC(vramset, 55, {
 			IF (TOTAL_ARGS != 5) THEN (
-				INV_ERROR
+					INV_ERROR
 			)
 			BYTE_IND x = ARG1;
 			BYTE_IND y = ARG2;
-			
+
 			BYTE r = ARG3;
 			BYTE g = ARG4;
 			BYTE b = ARG5;
-			
+
 			BYTE * pix = PIXEL(x, y);
 			pix[0] = r;
 			pix[1] = g;
 			pix[2] = b;
-		})	
+		}, {})
 T_PROC_FUNC(repaint, 56, {
-		proc->repaint();
-})
+			proc->repaint();
+		}, {})
 T_PROC_FUNC(makewindow, 57, {
-		proc->initTX();
-})
+			proc->initTX();
+		}, {})
 T_PROC_FUNC(killwindow, 58, {
-		proc->cleanupTX();
-})
+			proc->cleanupTX();
+		}, {})

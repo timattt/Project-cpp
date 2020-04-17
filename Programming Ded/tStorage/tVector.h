@@ -21,6 +21,10 @@ public:
 
 	}
 
+	unsigned getSize() {
+		return size;
+	}
+
 	// pushes back element lvalue reference.
 	// there will be made copy actually.
 	void tPush_back(const T &elem) {

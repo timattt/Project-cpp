@@ -27,6 +27,10 @@ char tReadCharFromLine() {
 	return c;
 }
 
+template<typename T = int> T tup(T a, T b) {
+	return a / b + (a % b == 0 ? 0 : 1);
+}
+
 //! Returns minimum of a and b.
 template<typename T = int> T tMin(T a, T b) {
 	return (a < b ? a : b);
@@ -49,7 +53,7 @@ public:
 		new (dest) T(elem);
 	}
 	template<typename T> void __tWriteBytes_rvalue(T &&elem, char *dest) {
-		char * beg = (char*)(&elem);
+		char *beg = (char*) (&elem);
 		for (unsigned i = 0; i < sizeof(T); i++) {
 			dest[i] = beg[i];
 		}
@@ -133,7 +137,7 @@ template<typename T> void tWriteBytes(const T &elem, char *dest) {
 }
 
 //! Writes element into given bytes array.
-template<typename T> void tWriteBytes_rvalue(T && elem, char *dest) {
+template<typename T> void tWriteBytes_rvalue(T &&elem, char *dest) {
 	__mem__.__tWriteBytes_rvalue(elem, dest);
 }
 

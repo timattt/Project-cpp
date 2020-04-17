@@ -445,9 +445,14 @@ public:
 	bool tContains(tString pattern) const {
 		for (unsigned i = 0; i < size(); i++) {
 			bool bad = 0;
-			for (unsigned j = 0; (i + j < size()) && (j < pattern.size());
+			for (unsigned j = 0; (j < pattern.size());
 					j++) {
+				if (i + j >= size()) {
+					bad = 1;
+					break;
+				}
 				if (__array()[i + j] != pattern.__array()[j]) {
+
 					bad = 1;
 					break;
 				}
