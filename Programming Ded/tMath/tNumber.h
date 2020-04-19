@@ -9,83 +9,119 @@ using namespace tUtilities;
 
 namespace tMath {
 
-unsigned constr = 0, destr = 0;
+map<tString, tString> name_to_id;
+map<tString, tString> id_to_name;
 
-void info() {
-	cout << "total " << constr << " constructors and " << destr
-			<< " destructors\n";
+tFile *dest;
+
+void begin() {
+	DeleteFileA("grsrc");
+	dest = new tFile("grsrc");
+	dest->tStartMapping(10000);
+	dest->tWriteLine("digraph gr {");
+}
+tString rando() {
+	tString res = "";
+	for (int i = 0; i < 10; i++) {
+		char s = 'a' + (rand() % 20);
+		res += s;
+	}
+	return res;
+}
+tString id(tString nm) {
+	if (name_to_id.count(nm) > 0) {
+		return name_to_id[nm];
+	} else {
+		tString id = rando();
+		dest->tWriteLine(id + " [label=" + '"' + nm + '"' + "];");
+		name_to_id[nm] = id;
+		id_to_name[id] = nm;
+		return id;
+	}
+}
+
+void write(tString p1, tString p2, tString c) {
+	tString id_p1 = id(p1);
+	tString id_p2 = id(p2);
+
+	tString id_c = id(c);
+
+	dest->tWriteLine(id_p1 + "->" + id_c + ";");
+	dest->tWriteLine(id_p2 + "->" + id_c + ";");
+}
+
+void write(tString p1, tString c) {
+	tString id_p1 = id(p1);
+	tString id_c = id(c);
+	dest->tWriteLine(id_p1 + "->" + id_c + ";");
+}
+
+void end() {
+	dest->tWriteLine("}");
+	dest->tStopMapping();
+	delete dest;
+	tCreateDotImg("grsrc", "gr.png");
+}
+
+void add(tString v) {
+	id(v);
 }
 
 template<typename T = int> class tNumber {
 public:
 	T core;
+	tString info;
 
-	tNumber() {
-		//std::cout << "Contructor 1\n";
-		constr++;
-	}
-
-	tNumber(const tNumber & tn) {
-		//std::cout << "Contructor 1\n";
-		constr++;
+	tNumber(const tNumber &tn, tString mes) {
 		core = tn.core;
+		info = mes;
+		write(tn.info, info);
 	}
 
-	tString tToString() {
-		return {core};
-	}
-
-	tNumber(T cr) {
+	tNumber(T cr, tString var) {
 		core = cr;
-		//std::cout << "Contructor 2, " << core << "\n";
-		constr++;
+		info = var;
+		add(info);
 	}
 
 	~tNumber() {
-		//std::cout << "Destructor, " << core << "\n";
-		destr++;
 	}
 
-	tNumber operator=(tNumber cr) {
-		return {cr};
+	void operator=(const tNumber &cr) {
+		write(this->info, tString("(=") + cr.info + ")");
+		this->info = tString("(=") + cr.info + ")";
+		this->core = cr.core;
+
 	}
 
-	tNumber operator+(tNumber b) {
-		return {this->core + b.core};
+	tNumber operator+(const tNumber &b) {
+		write(this->info, b.info, this->info + "+" + b.info);
+		tNumber ret(this->core + b.core, this->info + "+" + b.info);
+		return ret;
 	}
 
-	tNumber operator-(tNumber b) {
-		return {this->core - b.core};
+	tNumber operator-(const tNumber &b) {
+		write(this->info, b.info, this->info + "-" + b.info);
+		tNumber ret(this->core - b.core, this->info + "-" + b.info);
+		return ret;
 	}
 
-	tNumber operator*(tNumber b) {
-		return {this->core * b.core};
+	tNumber operator*(const tNumber &b) {
+		write(this->info, b.info, this->info + "*" + b.info);
+		tNumber ret(this->core * b.core, this->info + "*" + b.info);
+		return ret;
 	}
 
-	tNumber operator/(tNumber b) {
-		return {this->core / b.core};
+	tNumber operator/(const tNumber &b) {
+		write(this->info, b.info, this->info + "/" + b.info);
+		tNumber ret(this->core / b.core, this->info + "/" + b.info);
+		return ret;
 	}
 
 	tNumber operator++() {
-		return {this->core + 1};
+		tNumber ret(this->core + 1, this->info + "+1");
+		return ret;
 	}
-
-	bool operator<(tNumber b) {
-		return this->core < b.core;
-	}
-
-	bool operator>(tNumber b) {
-		return this->core > b.core;
-	}
-
-	tNumber operator+=(tNumber b) {
-		return {this->core + b.core};
-	}
-
-	tNumber operator-=(tNumber b) {
-		return {this->core - b.core};
-	}
-
 };
 
 typedef tNumber<int> tint;
