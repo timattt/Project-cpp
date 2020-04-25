@@ -205,13 +205,13 @@ public:
 				"\x53\x51\x52\x31\xC0\x31\xDB\xB9\x0A\x00\x00\x00\xBA\x00\x00\x00\x00\x8A\x9A",
 				code_carriage, 19);
 		code_carriage += 19;
+
 		wcdw(io_string_va);
 		tCopyBuffers(
 				"\x80\xFB\x0D\x74\x0F\x80\xFB\x0A\x74\x0A\x83\xEB\x30\xF6\xE1\x01\xD8\x42\xEB\xE6\x5A\x59\x5B\xC3",
 				code_carriage, 24);
 		code_carriage += 24;
 	}
-
 	void buildOut() {
 		out_function_va = getCodeCarriageVA();
 		tCopyBuffers(
@@ -219,6 +219,8 @@ public:
 				code_carriage, 34);
 		code_carriage += 34;
 		callDefaultOutCharFunction();
+		tCopyBuffers("\xB8\x0A\x00\x00\x00", code_carriage, 5);
+		code_carriage += 5;
 		tCopyBuffers("\x59\x5A\x58\xC3", code_carriage, 4);
 		code_carriage += 4;
 	}

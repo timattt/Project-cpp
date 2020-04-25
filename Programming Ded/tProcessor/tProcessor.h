@@ -71,6 +71,25 @@ char tGetRegisterIndex(tString args) {
 	return index + 1;
 }
 
+tString tGetRegisterByIndex(char ind) {
+	tString reg = "BAD_REGISTER";
+
+	if (ind == 1) {
+		return "bp";
+	}
+	if (ind == 2) {
+		return "ax";
+	}
+	if (ind == 3) {
+		return "bx";
+	}
+	if (ind == 4) {
+		return "cx";
+	}
+
+	return reg;
+}
+
 struct tProcessor {
 
 	// RAM
@@ -84,6 +103,10 @@ struct tProcessor {
 
 	// Registers
 	PROCESSOR_TYPE *regs;
+
+	// Flags
+	bool JE_FLAG = 0;
+	bool JNE_FLAG = 0;
 
 private:
 
@@ -184,7 +207,6 @@ public:
 	}
 
 	/*
-
 	 // y - строка - line
 	 // x - столбец - column
 	 // y = floor(i / WIDTH);
@@ -220,84 +242,84 @@ public:
 	 txDestroyWindow();
 	 }
 	 }
-
-	 // Invokes program.
-	 void tInvoke() {
-	 // Update state
-	 invoking = true;
-
-	 // Pointers for arguments
-	 PROCESSOR_TYPE *arg_buf[MAX_ARGS];
-	 PROCESSOR_TYPE constant_pointers[MAX_ARGS];
-
-	 // Setting BP register to be right after code in RAM and ensure there will be space for 2 parameters.
-	 regs[(unsigned) tGetRegisterIndex(tString("bp"))] = 0;
-
-	 // Starting main loop of the invocation
-	 // Invocation will be stopped ONLY WHEN CARRIAGE IS STANDING RIGHT IN THE END OF THE CODE.
-	 // So invocation can continue even if carriage is not executing code.
-	 while (carriage != ram + code_size) {
-	 // Reading id of function.
-	 char id = tGetc();
-	 // Generation of normal c++ function.
-	 tProcFunction func = NULL;
-
-	 #define T_PROC_FUNC(NAME, ID, CODE) if (id == ID) {func = [](PROCESSOR_TYPE**args, unsigned totalArgs, tProcessor*proc) CODE;}
-	 #include "tStandartDefs.h"
-	 #include "cmd.tlang"
-	 #include "tStandartUndefs.h"
-	 #undef T_PROC_FUNC
-
-
-	 if (func == NULL) {
-	 continue;
-	 }
-
-	 //nm.out();
-
-	 // Reading byte where quantity of arguments is stored.
-	 unsigned total_args = (unsigned) (tGetc());
-
-	 // Parsing every argument and preparing argument array.
-	 for (unsigned i = 0; i < total_args; i++) {
-	 // Reading flag that says if this parameter lives in RAM.
-	 char isRam = tGetc();
-	 // Reading argument parameter.
-	 // If it is zero then next 4 bytes will be used.
-	 // If it is not zero then we will use register
-	 char arg_param = tGetc();
-
-	 PROCESSOR_TYPE *arg_p = NULL;
-
-	 // Arguments are 4 bytes after
-	 if (arg_param == (char) 0) {
-	 constant_pointers[i] = tConvertBytes<PROCESSOR_TYPE>(
-	 carriage);
-	 carriage += 4;
-	 arg_p = &constant_pointers[i];
-	 }
-	 // Argument is register
-	 else {
-	 arg_p = &(regs[(unsigned) arg_param]);
-	 }
-
-	 // If ram flag is not zero then value will be used as address for RAM
-	 if (isRam == 0) {
-	 *(arg_buf + i) = arg_p;
-	 } else {
-	 *(arg_buf + i) = (PROCESSOR_TYPE*) (ram
-	 + (unsigned) (*arg_p));
-	 }
-	 }
-
-	 // Launch function
-	 func(arg_buf, total_args, this);
-	 }
-
-	 invoking = false;
-	 }
-
 	 */
+
+	// Invokes program.
+	void tInvoke() {
+		cout << std::dec;
+
+		// Update state
+		invoking = true;
+
+		// Pointers for arguments
+		PROCESSOR_TYPE *arg_buf[MAX_ARGS];
+		PROCESSOR_TYPE constant_pointers[MAX_ARGS];
+
+		// Setting BP register to be right after code in RAM and ensure there will be space for 2 parameters.
+		regs[(unsigned) tGetRegisterIndex(tString("bp"))] = 0;
+
+		// Starting main loop of the invocation
+		// Invocation will be stopped ONLY WHEN CARRIAGE IS STANDING RIGHT IN THE END OF THE CODE.
+		// So invocation can continue even if carriage is not executing code.
+		while (carriage != ram + code_size) {
+			// Reading id of function.
+			char id = tGetc();
+			// Generation of normal c++ function.
+			tProcFunction func = NULL;
+
+#define T_PROC_FUNC(NAME, ID, CODE, CODE_EXE) if (id == ID) {func = [](PROCESSOR_TYPE**args, unsigned totalArgs, tProcessor*proc) CODE;}
+#include "tStandartDefs.h"
+#include "cmd.tlang"
+#include "tStandartUndefs.h"
+#undef T_PROC_FUNC
+
+			if (func == NULL) {
+				continue;
+			}
+
+			//nm.out();
+
+			// Reading byte where quantity of arguments is stored.
+			unsigned total_args = (unsigned) (tGetc());
+
+			// Parsing every argument and preparing argument array.
+			for (unsigned i = 0; i < total_args; i++) {
+				// Reading flag that says if this parameter lives in RAM.
+				char isRam = tGetc();
+				// Reading argument parameter.
+				// If it is zero then next 4 bytes will be used.
+				// If it is not zero then we will use register
+				char arg_param = tGetc();
+
+				PROCESSOR_TYPE *arg_p = NULL;
+
+				// Arguments are 4 bytes after
+				if (arg_param == (char) 0) {
+					constant_pointers[i] = tConvertBytes<PROCESSOR_TYPE>(
+							carriage);
+					carriage += 4;
+					arg_p = &constant_pointers[i];
+				}
+				// Argument is register
+				else {
+					arg_p = &(regs[(unsigned) arg_param]);
+				}
+
+				// If ram flag is not zero then value will be used as address for RAM
+				if (isRam == 0) {
+					*(arg_buf + i) = arg_p;
+				} else {
+					*(arg_buf + i) = (PROCESSOR_TYPE*) (ram
+							+ (unsigned) (*arg_p));
+				}
+			}
+
+			// Launch function
+			func(arg_buf, total_args, this);
+		}
+
+		invoking = false;
+	}
 
 };
 
@@ -334,139 +356,260 @@ map<tString, unsigned>* tGenJmpsLib(tFile *src) {
 
 	return result;
 }
-/*
- void tCompile(tFile *source, tFile *exe) {
- if (source == NULL || exe == NULL) {
- tThrowException("Something went wrong!");
- }
 
- // File init
- source->tStartMapping();
- exe->tStartMapping(2 * tGetFileSize(source->tGetName()));
+tString genMarker(int index) {
+	tString res = "MARKER";
+	res += index;
+	return res;
+}
 
- // Jumps library
- list<pair<tString, unsigned>> jmp_later;
- map<tString, unsigned> *jmp_points = tGenJmpsLib(source);
+map<int, tString>* getMarkers(tFile *exe) {
+	map<int, tString> *markers = new map<int, tString>;
+	exe->tStartMapping();
+	while (exe->tHasMoreSymbs()) {
+		(*markers)[exe->tGetCurrentByte()] = genMarker(exe->tGetCurrentByte());
 
- // Ensuring end. target is in this file.
- (*jmp_points)[tString("end.")] = 1;
+		// Reading id of function.
+		if (0 == (unsigned) exe->tGetc()) {
+			break;
+		}
 
- source->tFlip();
+		// Reading byte where quantity of arguments is stored.
+		unsigned total_args = (unsigned) (exe->tGetc());
 
- while (source->tHasMoreSymbs()) {
- tString line = source->tReadLine();
- unsigned total_divs = 0;
- tString *divs = line.tParse(SRC_IGNORE_SYMBS, SRC_IGNORE_SYMBS_QUANT,
- total_divs);
+		// Parsing every argument and preparing argument array.
+		for (unsigned i = 0; i < total_args; i++) {
+			// Reading flag that says if this parameter lives in RAM.
+			exe->tGetc();
+			// Reading argument parameter.
+			// If it is zero then next 4 bytes will be used.
+			// If it is not zero then we will use register
+			char arg_param = exe->tGetc();
 
- // Checking if it is jump
- for (unsigned i = 0; i < total_divs; i++) {
- // double dot index :
- unsigned dd_index = divs[i].size() - 1;
- if (divs[i].tGetc(dd_index) == ':') {
- tString cutted = divs[i].tSubstring(0, dd_index - 1);
+			// Arguments are 4 bytes after
+			if (arg_param == (char) 0) {
+				exe->tMovePointer(4);
+			}
+		}
+	}
+	exe->tStopMapping();
+	return markers;
+}
 
- (*jmp_points)[cutted] = exe->tGetCurrentByte();
+void tDisasm_texe(tFile *exe, tFile *&src) {
+	map<int, tString> *markers = getMarkers(exe);
 
- delete divs;
- total_divs = 0;
- break;
- }
- }
+	exe->tStartMapping();
+	src->tStartMapping(1000);
 
- if (total_divs < 1) {
- delete divs;
- continue;
- }
+	tString curr = "";
 
- if (divs[0].size() > 1 && divs[0].tGetc(0) == '/'
- && divs[0].tGetc(1) == '/') {
- delete divs;
- continue;
- }
+	while (exe->tHasMoreSymbs()) {
+		// Writing marker
+		src->tWriteLine((*markers)[exe->tGetCurrentByte()] + ":");
 
- int id = -1;
+		// Reading id of function.
+		char id = exe->tGetc();
+		// Generation of normal c++ function.
+		tProcFunction func = NULL;
 
- #define T_PROC_FUNC(NAME, ID, CODE, CODE_PE) if (divs[0] == tString(#NAME)) {id = ID;}
- #include "tStandartDefs.h"
- #include "cmd.tlang"
- #include "tStandartUndefs.h"
- #undef T_PROC_FUNC
+		tString func_name = "";
 
- if (id == -1 || total_divs - 1 > MAX_ARGS) {
- delete divs;
- tThrowException("Compilation error!");
- }
+#define T_PROC_FUNC(NAME, ID, CODE, CODE_EXE) if (id == ID) {func_name = #NAME;func = [](PROCESSOR_TYPE**args, unsigned totalArgs, tProcessor*proc) CODE;}
+#include "tStandartDefs.h"
+#include "cmd.tlang"
+#include "tStandartUndefs.h"
+#undef T_PROC_FUNC
 
- // Writing id of this command
- exe->tWritec(id);
+		if (func == NULL) {
+			cout << "NO SUCH DISASM FUNCTION " << std::dec << (int)id << "\n";
+			continue;
+		}
 
- // Writing quantity of parameters
- exe->tWritec((char) (total_divs - 1));
- for (unsigned i = 1; i < total_divs; i++) {
+		curr += func_name;
 
- char isRam = 0;
- if (divs[i].tGetc(0) == '['
- && divs[i].tGetc(divs[i].size() - 1) == ']') {
- isRam = (char) (127);
+		curr += " ";
 
- divs[i] = divs[i].tSubstring(1, divs[i].size() - 1);
- }
+		// Reading byte where quantity of arguments is stored.
+		unsigned total_args = (unsigned) (exe->tGetc());
 
- char address =
- (divs[i].size() > 1 ? tGetRegisterIndex(divs[i]) : -1);
+		// Parsing every argument and preparing argument array.
+		for (unsigned i = 0; i < total_args; i++) {
+			// Reading flag that says if this parameter lives in RAM.
+			char isRam = exe->tGetc();
+			// Reading argument parameter.
+			// If it is zero then next 4 bytes will be used.
+			// If it is not zero then we will use register
+			char arg_param = exe->tGetc();
 
- exe->tWritec(isRam);
+			if (isRam != 0) {
+				curr += "[";
+			}
 
- if (address != -1) {
- // Writing type of argument. In this case it will be register.
- exe->tWritec(address);
- } else {
- // Writing type of argument. In this case there will be 4 bytes after.
- exe->tWritec((char) (0));
+			// Arguments are 4 bytes after
+			if (arg_param == (char) 0) {
+				int val = tConvertBytes<PROCESSOR_TYPE>(
+						exe->tGetCurrentPointer());
+				exe->tMovePointer(4);
+				if ((isRam != 0 || id == 51 || id == 52 || id == 50 || id == 49) && markers->count(val)) {
+					curr += (*markers)[val];
+				} else {
+					curr += val;
+				}
+			}
+			// Argument is register
+			else {
+				curr += tGetRegisterByIndex(arg_param);
+			}
 
- if ((*jmp_points).count(divs[i]) > 0) {
- pair<tString, unsigned> p = { divs[i],
- exe->tGetCurrentByte() };
- jmp_later.push_back(p);
- exe->tMovePointer(4);
- continue;
- }
+			if (isRam != 0) {
+				curr += "]";
+			}
 
- PROCESSOR_TYPE value = 0;
- if (typeid(PROCESSOR_TYPE) == typeid(int)) {
- value = divs[i].tToInt();
- }
- if (typeid(PROCESSOR_TYPE) == typeid(float)) {
- value = divs[i].tToFloat();
- }
- tWriteBytes<PROCESSOR_TYPE>(value, exe->tGetCurrentPointer());
- exe->tMovePointer(4);
+			if (i + 1 < total_args) {
+				curr += ", ";
+			}
+		}
 
- }
+		src->tWriteLine(curr);
+		curr = "";
+	}
 
- }
+	tShrink(src);
+	exe->tStopMapping();
+}
 
- delete divs;
- }
+void tCompile_texe(tFile *source, tFile *&exe) {
+	if (source == NULL || exe == NULL) {
+		tThrowException("Something went wrong!");
+	}
 
- (*jmp_points)[tString("end.")] = exe->tGetCurrentByte();
- exe->tWritec((char) 0);
+	// File init
+	source->tStartMapping();
+	exe->tStartMapping(2 * tGetFileSize(source->tGetName()));
 
- while (!jmp_later.empty()) {
- pair<tString, unsigned> p = jmp_later.front();
- jmp_later.pop_front();
- int address = (*jmp_points)[p.first];
- unsigned byte = p.second;
+	// Jumps library
+	list<pair<tString, unsigned>> jmp_later;
+	map<tString, unsigned> *jmp_points = tGenJmpsLib(source);
 
- tWriteBytes<PROCESSOR_TYPE>(address, exe->tGetBuffer() + byte);
- }
+	// Ensuring end. target is in this file.
+	(*jmp_points)[tString("end.")] = 1;
 
- source->tStopMapping();
- exe->tStopMapping();
+	source->tFlip();
 
- }
- */
+	while (source->tHasMoreSymbs()) {
+		tString line = source->tReadLine();
+		unsigned total_divs = 0;
+		tString *divs = line.tParse(SRC_IGNORE_SYMBS, SRC_IGNORE_SYMBS_QUANT,
+				total_divs);
+
+		// Checking if it is jump
+		for (unsigned i = 0; i < total_divs; i++) {
+			// double dot index :
+			unsigned dd_index = divs[i].size() - 1;
+			if (divs[i].tGetc(dd_index) == ':') {
+				tString cutted = divs[i].tSubstring(0, dd_index - 1);
+
+				(*jmp_points)[cutted] = exe->tGetCurrentByte();
+
+				delete divs;
+				total_divs = 0;
+				break;
+			}
+		}
+
+		if (total_divs < 1) {
+			delete divs;
+			continue;
+		}
+
+		if (divs[0].size() > 1 && divs[0].tGetc(0) == '/'
+				&& divs[0].tGetc(1) == '/') {
+			delete divs;
+			continue;
+		}
+
+		int id = -1;
+
+#define T_PROC_FUNC(NAME, ID, CODE, CODE_PE) if (divs[0] == tString(#NAME)) {id = ID;}
+#include "tStandartDefs.h"
+#include "cmd.tlang"
+#include "tStandartUndefs.h"
+#undef T_PROC_FUNC
+
+		if (id == -1 || total_divs - 1 > MAX_ARGS) {
+			delete divs;
+			tThrowException("Compilation error!");
+		}
+
+		// Writing id of this comma		nd
+		exe->tWritec(id);
+
+		// Writing quantity of parameters
+		exe->tWritec((char) (total_divs - 1));
+		for (unsigned i = 1; i < total_divs; i++) {
+
+			char isRam = 0;
+			if (divs[i].tGetc(0) == '['
+					&& divs[i].tGetc(divs[i].size() - 1) == ']') {
+				isRam = (char) (127);
+
+				divs[i] = divs[i].tSubstring(1, divs[i].size() - 1);
+			}
+
+			char address =
+					(divs[i].size() > 1 ? tGetRegisterIndex(divs[i]) : -1);
+
+			exe->tWritec(isRam);
+
+			if (address != -1) {
+				// Writing type of argument. In this case it will be register.
+				exe->tWritec(address);
+			} else {
+				// Writing type of argument. In this case there will be 4 bytes after.
+				exe->tWritec((char) (0));
+
+				if ((*jmp_points).count(divs[i]) > 0) {
+					pair<tString, unsigned> p = { divs[i],
+							exe->tGetCurrentByte() };
+					jmp_later.push_back(p);
+					exe->tMovePointer(4);
+					continue;
+				}
+
+				PROCESSOR_TYPE value = 0;
+				if (typeid(PROCESSOR_TYPE) == typeid(int)) {
+					value = divs[i].tToInt();
+				}
+				if (typeid(PROCESSOR_TYPE) == typeid(float)) {
+					value = divs[i].tToFloat();
+				}
+				tWriteBytes<PROCESSOR_TYPE>(value, exe->tGetCurrentPointer());
+				exe->tMovePointer(4);
+
+			}
+
+		}
+
+		delete divs;
+	}
+
+	(*jmp_points)[tString("end.")] = exe->tGetCurrentByte();
+	exe->tWritec((char) 0);
+
+	while (!jmp_later.empty()) {
+		pair<tString, unsigned> p = jmp_later.front();
+		jmp_later.pop_front();
+		int address = (*jmp_points)[p.first];
+		unsigned byte = p.second;
+
+		tWriteBytes<PROCESSOR_TYPE>(address, exe->tGetBuffer() + byte);
+	}
+
+	exe->tMovePointer(-1);
+	tShrink(exe);
+	source->tStopMapping();
+}
 
 char imprt[MAX_IMPORT_FILES][MAX_IMPORT_FUNCTIONS + 2][MAX_IMPORT_NAME_LEN] = {
 		{ "kernel32.dll", "ExitProcess", "\0" }, { "kernel32.dll",
@@ -475,45 +618,45 @@ char imprt[MAX_IMPORT_FILES][MAX_IMPORT_FUNCTIONS + 2][MAX_IMPORT_NAME_LEN] = {
 				"GetStdHandle", "\0" }, };
 
 struct argument {
-	//! 0 - constant, 1 - register
+//! 0 - constant, 1 - register
 	char type = 0;
-	//! 1 if []
+//! 1 if []
 	char isPointer = 0;
-	//! If this is a constant then its value. If it is a register then its number (ax - 2, bx - 3, cx - 4)
+//! If this is a constant then its value. If it is a register then its number (ax - 2, bx - 3, cx - 4)
 	int value = 0;
-	//! 1 - if this argument is presented by the marker
+//! 1 - if this argument is presented by the marker
 	char isMarker = 0;
-	//! name of this marker
+//! name of this marker
 	tString marker = { };
-	//! length from end of bytecoded function to start of the markers address
+//! length from end of bytecoded function to start of the markers address
 	int marker_delta = 0;
-	//! relative address - from the end of the function to marker, absolute address - markers address
+//! relative address - from the end of the function to marker, absolute address - markers address
 	char isRelative = 0;
 };
 
 // small struct to store data about places in code where after compiling may be written addresses of markers.
 struct marker_empty_field {
-	//! name of this marker
+//! name of this marker
 	tString marker_name;
-	//! position where the address will be written
+//! position where the address will be written
 	int file_pos;
-	//! end position of the function from this marker is used
+//! end position of the function from this marker is used
 	int function_end_pos;
-	//! if 1 then there will be length from the end function position to marker address.
+//! if 1 then there will be length from the end function position to marker address.
 	char isRelative;
 };
 
 void tCompile_exe(tFile *source, tFile *exe_) {
 	tPE_Maker *maker;
 
-	// File init
+// File init
 	source->tStartMapping();
 	maker = new tPE_Maker(exe_, 0x400, 0x200, 4, imprt);
-	// Jumps library
+// Jumps library
 	list<marker_empty_field> jmp_later;
 	map<tString, unsigned> *jmp_points = tGenJmpsLib(source);
 
-	// Ensuring end. target is in this file.
+// Ensuring end. target is in this file.
 	(*jmp_points)[tString("end.")] = 1;
 
 	source->tFlip();
@@ -640,7 +783,7 @@ void tCompile_exe(tFile *source, tFile *exe_) {
 		delete divs;
 	}
 
-	// Analyze markers requests
+// Analyze markers requests
 	while (!jmp_later.empty()) {
 		marker_empty_field p = jmp_later.front();
 
@@ -663,6 +806,12 @@ void tCompile_exe(tFile *source, tFile *exe_) {
 	source->tStopMapping();
 	delete maker;
 
+}
+
+void translate_texe_to_exe(tFile * texe, tFile * exe) {
+	tFile * text_disasm = new tFile("disasm");
+	tDisasm_texe(texe, text_disasm);
+	tCompile_exe(text_disasm, exe);
 }
 
 }

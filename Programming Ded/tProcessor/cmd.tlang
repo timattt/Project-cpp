@@ -119,7 +119,9 @@ T_PROC_FUNC(in, 42, {
 
 		})
 
-T_PROC_FUNC(mov, 43, {}, {
+T_PROC_FUNC(mov, 10, {
+			ARG1 = ARG2;
+		}, {
 			arg2.marker_delta = 4;
 			arg1.marker_delta = 4;
 
@@ -245,12 +247,7 @@ T_PROC_FUNC(pop, 43, {
 T_PROC_FUNC(add, 44, {
 			HAVE_ARGS
 			(
-					PROCESSOR_TYPE RESULT = 0;
-					FOR_EACH_ARG
-					(
-							RESULT += ARG
-					)
-					PUSH(RESULT);
+					ARG1 = ARG1 + ARG2;
 			)
 			NO_ARGS(PUSH(POP + POP))
 		}, {
@@ -279,7 +276,16 @@ T_PROC_FUNC(add, 44, {
 					WB(0x01)WB(0xd9)
 				}
 			}
-
+			
+			// reg + const
+			if (arg1.type == 1 && arg2.type == 0 && arg1.isPointer == 0 && arg2.isPointer == 0) {
+				switch (arg1.value) {
+				case 2 : WB(0x05)WDW(arg2.value)break;
+				case 3: WB(0x81)WB(0xc3)WDW(arg2.value)break;
+				case 4 : WB(0x81)WB(0xc1)WDW(arg2.value)break;
+				}
+			}
+			
 			// const ptr + reg
 			if (arg1.isPointer == 1 && arg1.type == 0 && arg2.type == 1) {
 				arg1.marker_delta = 4;
@@ -321,7 +327,16 @@ T_PROC_FUNC(db, 233, {}, {
 				WB(args[i].value);
 			}
 		})
-T_PROC_FUNC(cmp, 222, {}, {
+T_PROC_FUNC(cmp, 17, {
+			if (ARG1 == ARG2) {
+				JE_FLAG = 1;
+				JNE_FLAG = 0;
+			} else {
+				JNE_FLAG = 1;
+				JE_FLAG = 0;
+			}
+		}, {
+			// reg and reg
 			if (arg1.type == 1 && arg2.type == 1) {
 				if ((arg1.value == 2 && arg2.value == 3) || (arg1.value == 3 && arg2.value == 2)) {
 					WB(0x39)WB(0xd8)
@@ -333,6 +348,17 @@ T_PROC_FUNC(cmp, 222, {}, {
 					WB(0x39)WB(0xcb)
 				}
 
+			}
+			if (arg1.type == 1 && arg2.type == 0 && arg2.isPointer == 0) {
+				if (arg1.value == 2) {
+					WB(0x3d)WDW(arg2.value);
+				}
+				if (arg1.value == 3) {
+					WB(0x81)WB(0xfb)WDW(arg2.value);
+				}
+				if (arg1.value == 4) {
+					WB(0x81)WB(0xf9)WDW(arg2.value);
+				}
 			}
 		})
 // No args: Pops two values from stack and pushes their sum.
@@ -403,8 +429,9 @@ T_PROC_FUNC(je, 50, {
 			IF (TOTAL_ARGS != 1) THEN (
 					INV_ERROR
 			)
-			IF (POP == POP) THEN (
+			IF (JE_FLAG) THEN (
 					JMP(ARG1)
+					JE_FLAG = 0;
 			)
 		}, {
 			arg1.isRelative = 1;
@@ -419,10 +446,9 @@ T_PROC_FUNC(jne, 51, {
 			(
 					INV_ERROR
 			)
-			PROCESSOR_TYPE a = POP;
-			PROCESSOR_TYPE b = POP;
-			IF (a != b) THEN (
+			IF (JNE_FLAG) THEN (
 					JMP(ARG1)
+					JNE_FLAG = 0;
 			)
 		}, {
 			arg1.isRelative = 1;
@@ -498,12 +524,14 @@ T_PROC_FUNC(vramset, 55, {
 			pix[1] = g;
 			pix[2] = b;
 		}, {})
-T_PROC_FUNC(repaint, 56, {
-			proc->repaint();
-		}, {})
-T_PROC_FUNC(makewindow, 57, {
-			proc->initTX();
-		}, {})
-T_PROC_FUNC(killwindow, 58, {
-			proc->cleanupTX();
-		}, {})
+/*
+ T_PROC_FUNC(repaint, 56, {
+ proc->repaint();
+ }, {})
+ T_PROC_FUNC(makewindow, 57, {
+ proc->initTX();
+ }, {})
+ T_PROC_FUNC(killwindow, 58, {
+ proc->cleanupTX();
+ }, {})
+ */

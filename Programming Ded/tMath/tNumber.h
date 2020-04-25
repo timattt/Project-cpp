@@ -14,6 +14,17 @@ map<tString, tString> id_to_name;
 
 tFile *dest;
 
+tString currColor1 = "white";
+tString currColor2 = "black";
+
+void setColor1(tString color) {
+	currColor1 = color;
+}
+
+void setColor2(tString color) {
+	currColor2 = color;
+}
+
 void begin() {
 	DeleteFileA("grsrc");
 	dest = new tFile("grsrc");
@@ -33,7 +44,12 @@ tString id(tString nm) {
 		return name_to_id[nm];
 	} else {
 		tString id = rando();
-		dest->tWriteLine(id + " [label=" + '"' + nm + '"' + "];");
+		dest->tWriteLine(
+				id + " [style=filled, label=" + '"' + nm + '"' + ", fillcolor="
+						+ currColor1 + "];");
+		dest->tWriteLine(tString("_") +
+				id + " [style=filled, label=" + '"' + nm + '"' + ", fillcolor="
+						+ currColor2 + "];");
 		name_to_id[nm] = id;
 		id_to_name[id] = nm;
 		return id;
@@ -48,12 +64,17 @@ void write(tString p1, tString p2, tString c) {
 
 	dest->tWriteLine(id_p1 + "->" + id_c + ";");
 	dest->tWriteLine(id_p2 + "->" + id_c + ";");
+
+	dest->tWriteLine(tString("_") + id_p1 + "-> _" + id_c + ";");
+	dest->tWriteLine(tString("_") + id_p2 + "-> _" + id_c + ";");
 }
 
 void write(tString p1, tString c) {
 	tString id_p1 = id(p1);
 	tString id_c = id(c);
 	dest->tWriteLine(id_p1 + "->" + id_c + ";");
+
+	dest->tWriteLine(tString("_") + id_p1 + "-> _" + id_c + ";");
 }
 
 void end() {
@@ -73,6 +94,7 @@ public:
 	tString info;
 
 	tNumber(const tNumber &tn, tString mes) {
+		setColor1("red");
 		core = tn.core;
 		info = mes;
 		write(tn.info, info);
@@ -81,6 +103,7 @@ public:
 	tNumber(T cr, tString var) {
 		core = cr;
 		info = var;
+		setColor1("blue");
 		add(info);
 	}
 
@@ -88,6 +111,10 @@ public:
 	}
 
 	void operator=(const tNumber &cr) {
+		setColor1("green");
+		this->info.out();
+		cr.info.out();
+		write(cr.info, tString("(=") + cr.info + ")");
 		write(this->info, tString("(=") + cr.info + ")");
 		this->info = tString("(=") + cr.info + ")";
 		this->core = cr.core;
@@ -95,24 +122,28 @@ public:
 	}
 
 	tNumber operator+(const tNumber &b) {
+		setColor1("yellow");
 		write(this->info, b.info, this->info + "+" + b.info);
 		tNumber ret(this->core + b.core, this->info + "+" + b.info);
 		return ret;
 	}
 
 	tNumber operator-(const tNumber &b) {
+		setColor1("cyan");
 		write(this->info, b.info, this->info + "-" + b.info);
 		tNumber ret(this->core - b.core, this->info + "-" + b.info);
 		return ret;
 	}
 
 	tNumber operator*(const tNumber &b) {
+		setColor1("orange");
 		write(this->info, b.info, this->info + "*" + b.info);
 		tNumber ret(this->core * b.core, this->info + "*" + b.info);
 		return ret;
 	}
 
 	tNumber operator/(const tNumber &b) {
+		setColor1("gray");
 		write(this->info, b.info, this->info + "/" + b.info);
 		tNumber ret(this->core / b.core, this->info + "/" + b.info);
 		return ret;

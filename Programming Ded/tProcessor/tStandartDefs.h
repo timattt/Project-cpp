@@ -11,6 +11,10 @@
 #define ARG5 **(args + 4)
 #define ARG_LAST **(args + totalArgs - 1)
 
+// Flags
+#define JE_FLAG proc->JE_FLAG
+#define JNE_FLAG proc->JNE_FLAG
+
 // Total arguments
 #define TOTAL_ARGS totalArgs
 

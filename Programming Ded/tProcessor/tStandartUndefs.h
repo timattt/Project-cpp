@@ -21,3 +21,5 @@
 #undef ELSE
 #undef BYTE_IND
 #undef PIXEL
+#undef JE_FLAG
+#undef JNE_FLAG
