@@ -280,7 +280,6 @@ private:
 		double l = 0.01;
 		double ro = 1000;
 		double g = 9.8;
-		cout << ( r * r * r * r * ro * g / (8 * l * R * R)  ) << "\n";
 		return - r * r * g * r * r * ro * currentWaterLevel * dt
 				/ (R * R * 8 * nu * l);
 	}

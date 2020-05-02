@@ -507,7 +507,9 @@ T_PROC_FUNC(end., 54, {
 					INV_ERROR
 			)
 			proc->tStop();
-		}, {})
+		}, {
+				maker->wcif("ExitProcess");
+		})
 T_PROC_FUNC(vramset, 55, {
 			IF (TOTAL_ARGS != 5) THEN (
 					INV_ERROR
