@@ -4,7 +4,7 @@
 
 # Навигатор по репозиторию
 [Интерпретируемый язык высокого уровня](https://github.com/timattt/Programming-C-MIPT-timattt/tree/master/Programming%20Ded/tGrammarParser)  
-[Компилятор компиляторов](https://github.com/timattt/Programming-C-MIPT-timattt/blob/master/Programming%20Ded/tGrammarParser/tGrammarParserParser/tGrammarParserParser.h)
+[Компилятор компиляторов](https://github.com/timattt/Programming-C-MIPT-timattt/blob/master/Programming%20Ded/tGrammarParser/tGrammarParserParser/tGrammarParserParser.h)  
 [PE манипулятор](https://github.com/timattt/Programming-C-MIPT-timattt/tree/master/Programming%20Ded/tPE_Editor)  
 [Эмулятор процессора и транслятор самодельного машинного кода в системный байткод](https://github.com/timattt/Programming-C-MIPT-timattt/tree/master/Programming%20Ded/tProcessor)  
 
