@@ -3,9 +3,9 @@
 Из них можно выделить несколько, которые представляют наибольший интерес, краткая сводка по ним следует далее.
 
 # Навигатор по репозиторию
-[Интерпретатор и компилятор компиляторов](https://github.com/timattt/Programming-C-MIPT-timattt/tree/master/Programming%20Ded/tGrammarParser)  
+[Интерпретируемый язык высокого уровня и компилятор компиляторов](https://github.com/timattt/Programming-C-MIPT-timattt/tree/master/Programming%20Ded/tGrammarParser)  
 [PE манипулятор](https://github.com/timattt/Programming-C-MIPT-timattt/tree/master/Programming%20Ded/tPE_Editor)  
-[Эмулятор процессора и транслятор](https://github.com/timattt/Programming-C-MIPT-timattt/tree/master/Programming%20Ded/tProcessor)  
+[Эмулятор процессора и транслятор самодельного машинного кода в системный байткод](https://github.com/timattt/Programming-C-MIPT-timattt/tree/master/Programming%20Ded/tProcessor)  
 
 # Компилятор компиляторов
 Пожалуй один из самых полезных проектов - алгоритм, позволяющий построить универсальный код для любой грамматики.
