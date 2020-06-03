@@ -2,7 +2,7 @@
 Сей репозиторий содержит мои проекты, написанные в первом семестре обучения на ФРТК.
 Из них можно выделить несколько, которые представляют наибольший интерес, краткая сводка по ним следует далее.
 
-# Содержание
+# Навигатор по репозиторию
 [Интерпретатор и компилятор компиляторов](https://github.com/timattt/Programming-C-MIPT-timattt/tree/master/Programming%20Ded/tGrammarParser)  
 [PE манипулятор](https://github.com/timattt/Programming-C-MIPT-timattt/tree/master/Programming%20Ded/tPE_Editor)  
 [Эмулятор процессора и транслятор](https://github.com/timattt/Programming-C-MIPT-timattt/tree/master/Programming%20Ded/tProcessor)  
