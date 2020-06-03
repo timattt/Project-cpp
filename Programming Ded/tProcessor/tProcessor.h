@@ -380,13 +380,18 @@ map<tString, unsigned>* tGenJmpsLib(tFile *src) {
 	return result;
 }
 
+//! Generates nice looking name for marker by index.
 tString genMarker(int index) {
 	tString res = "MARKER";
 	res += index;
 	return res;
 }
 
+//! Generates map: marker name -> src code location
 map<int, tString>* getMarkers(tFile *exe) {
+	if (!exe) {
+		tThrowException("Exe is null!");
+	}
 	map<int, tString> *markers = new map<int, tString>;
 	exe->tStartMapping();
 	while (exe->tHasMoreSymbs()) {
@@ -420,6 +425,9 @@ map<int, tString>* getMarkers(tFile *exe) {
 }
 
 void tDisasm_texe(tFile *exe, tFile *&src) {
+	if (!exe || !src) {
+		tThrowException("Something is null!");
+	}
 	map<int, tString> *markers = getMarkers(exe);
 
 	exe->tStartMapping();
@@ -544,8 +552,7 @@ void tCompile_texe(tFile *source, tFile *&exe) {
 		}
 
 		// Checking for comments
-		if (divs[0].size() > 1 && divs[0].tGetc(0) == '/'
-				&& divs[0].tGetc(1) == '/') {
+		if (divs[0].size() > 1 && divs[0].tGetc(0) == '/' && divs[0].tGetc(1) == '/') {
 			delete divs;
 			continue;
 		}
@@ -661,13 +668,15 @@ struct marker_empty_field {
 };
 
 void tCompile_exe(tFile *source, tFile *exe_) {
-	tPE_Maker *maker;
+	if (!source || !exe_) {
+		tThrowException("Something is null!");
+	}
+	tPE_Maker *maker= new tPE_Maker(exe_, 0x400, 0x200, 4, imprt);
 
 // File init
 	source->tStartMapping();
-	maker = new tPE_Maker(exe_, 0x400, 0x200, 4, imprt);
 // Jumps library
-	list<marker_empty_field> jmp_later;
+	list<marker_empty_field> jmp_later = {};
 	map<tString, unsigned> *jmp_points = tGenJmpsLib(source);
 
 // Ensuring end. target is in this file.
@@ -724,7 +733,7 @@ void tCompile_exe(tFile *source, tFile *exe_) {
 
 		// total arguments that is passed to function.
 		int total_args = (total_divs - 1);
-		argument args[MAX_ARGS];
+		argument args[MAX_ARGS] = {};
 
 		// ANALYZING ARGUMENTS
 		for (unsigned i = 1; i < total_divs; i++) {
@@ -818,14 +827,15 @@ void tCompile_exe(tFile *source, tFile *exe_) {
 }
 
 void smart_translate_texe_to_exe(tFile *texe, tFile *exe) {
-	tPE_Maker *maker;
-
+	if (!texe || !exe) {
+		tThrowException("Something is null!");
+	}
 	// File init
 	texe->tStartMapping();
-	maker = new tPE_Maker(exe, 0x400, 0x200, 4, imprt);
+	tPE_Maker *maker = new tPE_Maker(exe, 0x400, 0x200, 4, imprt);
 
 	// Commands starts
-	map<int, int> texe_to_exe;
+	map<int, int> texe_to_exe = {};
 
 	// FIRST BYPASS!!!
 	while (texe->tHasMoreSymbs()) {
@@ -834,7 +844,7 @@ void smart_translate_texe_to_exe(tFile *texe, tFile *exe) {
 		int id = (int) texe->tGetc();
 		int total_args = (int) texe->tGetc();
 
-		argument args[MAX_ARGS];
+		argument args[MAX_ARGS] = {};
 
 		// ANALYZING ARGUMENTS
 		for (int i = 0; i < total_args; i++) {
@@ -890,7 +900,7 @@ void smart_translate_texe_to_exe(tFile *texe, tFile *exe) {
 		int id = (int) texe->tGetc();
 		int total_args = (int) texe->tGetc();
 
-		argument args[MAX_ARGS];
+		argument args[MAX_ARGS] = {};
 
 		// ANALYZING ARGUMENTS
 		for (int i = 0; i < total_args; i++) {
@@ -935,6 +945,7 @@ void smart_translate_texe_to_exe(tFile *texe, tFile *exe) {
 
 #undef WB
 #undef WDW
+
 		bool rewrite = may_rewrite(id);
 		if (rewrite == 1) {
 			int texe_to = arg1.value;
@@ -954,6 +965,9 @@ void smart_translate_texe_to_exe(tFile *texe, tFile *exe) {
 }
 
 void slow_translate_texe_to_exe(tFile *texe, tFile *exe) {
+	if (!texe || !exe) {
+		tThrowException("Something is null!");
+	}
 	tFile *text_disasm = new tFile("disasm");
 	tDisasm_texe(texe, text_disasm);
 	tCompile_exe(text_disasm, exe);

@@ -15,14 +15,14 @@ private:
 	//! Same as std assert.
 	void tAssert(bool val) {
 		if (!val) {
-			tThrowException();
+			tThrowException("Bad assertion!");
 		}
 	}
 
 	//! Checks core to be valid. If not then tThrowException function is used.
 	void tCheckValid() {
 		if (!core.tIsValid()) {
-			tThrowException();
+			tThrowException("Not valid!");
 		}
 	}
 
@@ -36,7 +36,7 @@ private:
 	void postSave() {
 		if (!core.tIsValid()) {
 			copy.tCopyTo(core);
-			tThrowException();
+			tThrowException("Bad post save!");
 		}
 	}
 

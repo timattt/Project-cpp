@@ -228,7 +228,7 @@ protected:
 	//! Checks all security features.
 	void tCheckValid() {
 		if (!tIsValid()) {
-			tThrowException();
+			tThrowException("Not valid!");
 		}
 	}
 

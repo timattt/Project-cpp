@@ -7,8 +7,11 @@
 #include <winnt.h>
 
 using namespace tFileHandler;
-using namespace std;
 using namespace tStorage;
+
+using std::map;
+using std::cout;
+using std::string;
 
 #define MAX_IMPORT_FILES 4
 #define MAX_IMPORT_FUNCTIONS 1
@@ -71,6 +74,10 @@ public:
 	// first name in file array is file name.
 	tPE_Maker(tFile *file_, int code_sz, int data_sz, int total_import_files,
 			  char import[MAX_IMPORT_FILES][MAX_IMPORT_FUNCTIONS + 2][MAX_IMPORT_NAME_LEN]) {
+		if (!file) {
+			tThrowException("No file for PE creator!");
+		}
+
 		dest = file_;
 
 		// not aligned sizes here
@@ -201,90 +208,76 @@ public:
 		callDefaultInStringFunction();
 
 		// First code part
-		const char code1[] = "\x53\x51\x52\x31\xC0\x31\xDB\xB9\x0A\x00\x00\x00\xBA\x00\x00\x00\x00\x8A\x9A";
+		const char code1[] = "\x53"						// push ebx
+							 "\x51"						// push ecx
+							 "\x52"						// push edx
+							 "\x31\xC0"					// xor eax, eax
+							 "\x31\xDB"					// xor ebx, ebx
+							 "\xB9\x0A\x00\x00\x00"		// mov ecx, 0xA
+							 "\xBA\x00\x00\x00\x00"		// mov edx, 0x0
+							 "\x8A\x9A";				// mov bl, [io_buf]
 		int sz = sizeof(code1) - 1;
 		tCopyBuffers(code1, code_carriage, sz);
-		code_carriage += 19;
-		// Disasm:
-		/*
-0:  53                      push   ebx
-1:  51                      push   ecx
-2:  52                      push   edx
-3:  31 c0                   xor    eax,eax
-5:  31 db                   xor    ebx,ebx
-7:  b9 0a 00 00 00          mov    ecx,0xa
-c:  ba 00 00 00 00          mov    edx,0x0
-11: 8a                      .byte 0x8a
-12: 9a                      .byte 0x9a
-		 */
+		code_carriage += sz;
 
 		// Paste pointer
 		wcdw(io_string_va);
 
 		// Second code part
-		const char code2[] = "\x80\xFB\x0D\x74\x0F\x80\xFB\x0A\x74\x0A\x83\xEB\x30\xF6\xE1\x01\xD8\x42\xEB\xE6\x5A\x59\x5B\xC3";
+		const char code2[] = "\x80\xFB\x0D" // cmp    bl, 0xd
+							 "\x74\x0F"     // je     0x14
+							 "\x80\xFB\x0A" // cmp    bl, 0xa
+							 "\x74\x0A"     // je     0x14
+							 "\x83\xEB\x30" // sub    ebx, 0x30
+							 "\xF6\xE1"     // mul    cl
+							 "\x01\xD8"     // add    eax, ebx
+							 "\x42"         // inc    edx
+							 "\xEB\xE6"     // jmp    0xfffffffa
+							 "\x5A"   		// pop    edx
+							 "\x59"			// pop    ecx
+							 "\x5B"			// pop    ebx
+							 "\xC3";		// ret
 		sz = sizeof(code2) - 1;
 		tCopyBuffers(code2, code_carriage, sz);
 		code_carriage += sz;
-		// Disasm:
-		/*
-0:  80 fb 0d                cmp    bl,0xd
-3:  74 0f                   je     0x14
-5:  80 fb 0a                cmp    bl,0xa
-8:  74 0a                   je     0x14
-a:  83 eb 30                sub    ebx,0x30
-d:  f6 e1                   mul    cl
-f:  01 d8                   add    eax,ebx
-11: 42                      inc    edx
-12: eb e6                   jmp    0xfffffffa
-14: 5a                      pop    edx
-15: 59                      pop    ecx
-16: 5b                      pop    ebx
-17: c3                      ret
-		 */
+
 	}
+
 	void buildOut() {
 		out_function_va = getCodeCarriageVA();
 
 		// First code part
-		const char code1[] = "\x50\x52\x51\xB9\x0A\x00\x00\x00\x31\xD2\xF7\xF1\x85\xC0\x74\x05\xE8\xEB\xFF\xFF\xFF\x89\xD0\x83\xF8\x0A\x7C\x03\x83\xC0\x07\x83\xC0\x30";
+		const char code1[] = "\x50"					// push   eax
+							 "\x52"					// push   edx
+							 "\x51"					// push   ecx
+							 "\xB9\x0A\x00\x00\x00"	// mov    ecx, 0xa
+							 "\x31\xD2"				// xor    edx, edx
+							 "\xF7\xF1"				// div    ecx
+							 "\x85\xC0"				// test   eax, eax
+							 "\x74\x05"				// je     0x15
+							 "\xE8\xEB\xFF\xFF\xFF"	// call   0x0
+							 "\x89\xD0"				// mov    eax, edx
+							 "\x83\xF8\x0A"			// cmp    eax, 0xa
+							 "\x7C\x03"				// jl     0x1f
+							 "\x83\xC0\x07"			// add    eax, 0x7
+							 "\x83\xC0\x30";		// add    eax, 0x30
 		int sz = sizeof(code1) - 1;
 		tCopyBuffers(code1, code_carriage, sz);
 		code_carriage += sz;
-		// Disasm:
-		/*
-0:  50                      push   eax
-1:  52                      push   edx
-2:  51                      push   ecx
-3:  b9 0a 00 00 00          mov    ecx,0xa
-8:  31 d2                   xor    edx,edx
-a:  f7 f1                   div    ecx
-c:  85 c0                   test   eax,eax
-e:  74 05                   je     0x15
-10: e8 eb ff ff ff          call   0x0
-15: 89 d0                   mov    eax,edx
-17: 83 f8 0a                cmp    eax,0xa
-1a: 7c 03                   jl     0x1f
-1c: 83 c0 07                add    eax,0x7
-1f: 83 c0 30                add    eax,0x30
-		 */
 
 		// Call function
 		callDefaultOutCharFunction();
 
 		// Second part
-		const char code2[] = "\xB8\x0A\x00\x00\x00\x59\x5A\x58\xC3";
+		const char code2[] = "\xB8\x0A\x00\x00\x00" // mov    eax,0xa
+							 "\x59"					// pop    ecx
+							 "\x5A"					// pop    edx
+							 "\x58"					// pop    eax
+							 "\xC3";				// ret
 		sz = sizeof(code2) - 1;
+
 		tCopyBuffers(code2, code_carriage, sz);
 		code_carriage += sz;
-		// Disasm:
-/*
-0:  b8 0a 00 00 00          mov    eax,0xa
-5:  59                      pop    ecx
-6:  5a                      pop    edx
-7:  58                      pop    eax
-8:  c3                      ret
- */
 	}
 
 	void buildCharOut() {
@@ -493,13 +486,13 @@ private:
 	}
 
 	void initSizes() {
-		CODE_SIZE_RVA = alignRVA(code_size);
+		CODE_SIZE_RVA   = alignRVA(code_size);
 		IMPORT_SIZE_RVA = alignRVA(import_size);
-		DATA_SIZE_RVA = alignRVA(data_size);
+		DATA_SIZE_RVA   = alignRVA(data_size);
 
-		CODE_RVA = sectAl;
-		IMPORT_RVA = CODE_RVA + CODE_SIZE_RVA;
-		DATA_RVA = IMPORT_RVA + IMPORT_SIZE_RVA;
+		CODE_RVA   = sectAl;
+		IMPORT_RVA = CODE_RVA   + CODE_SIZE_RVA;
+		DATA_RVA   = IMPORT_RVA + IMPORT_SIZE_RVA;
 	}
 
 	void initImportSection(int total_import_files,
@@ -557,7 +550,7 @@ private:
 			imprt_file->FirstThunk = after_rva;
 			for (int j = 0; j < total_func; j++) {
 				cout << "Function: " << import[i][j + 1] << " located at "
-						<< after_rva << "\n";
+					 << after_rva << "\n";
 				import_funcs[import[i][j + 1]] = after_rva;
 				tWriteBytes<DWORD>(funcs.tGet(j), after);
 				after += 4;
@@ -573,14 +566,14 @@ private:
 	}
 
 	void initHeaders() {
-		dos_h = (_IMAGE_DOS_HEADER*) file;
-		pe_h = (_IMAGE_NT_HEADERS*) (file + sizeof(_IMAGE_DOS_HEADER));
-		code_h = (_IMAGE_SECTION_HEADER*) (file + sizeof(_IMAGE_DOS_HEADER) + sizeof(_IMAGE_NT_HEADERS));
+		dos_h    = (_IMAGE_DOS_HEADER*) file;
+		pe_h     = (_IMAGE_NT_HEADERS*) (file + sizeof(_IMAGE_DOS_HEADER));
+		code_h   = (_IMAGE_SECTION_HEADER*) (file + sizeof(_IMAGE_DOS_HEADER) + sizeof(_IMAGE_NT_HEADERS));
 		import_h = code_h + 1;
-		data_h = import_h + 1;
+		data_h   = import_h + 1;
 
 		// Dos header
-		dos_h->e_magic = *(WORD*) ("MZ");
+		dos_h->e_magic  = *(WORD*) ("MZ");
 		dos_h->e_lfanew = 0x40;
 
 		// PE header
@@ -627,20 +620,23 @@ private:
 					DATA_RVA,
 					data_size,
 					data_locat,
-					*(DWORD*)("\xC0\x00\x00\x40"));
+					*(DWORD*)("\x40\x00\x00\xC0"));
 	}
 
 	void initSection(_IMAGE_SECTION_HEADER *sec, const char *name,
 					 int virt_size, int virt_addr, int size_of_raw_data,
 					 int pointer_to_raw, int charact) {
+		if (!sec) {
+			tThrowException("Section pointer is null!");
+		}
 		for (int i = 0, sz = strlen(name); i < sz; i++) {
 			sec->Name[i] = name[i];
 		}
 		sec->Misc.VirtualSize = virt_size;
-		sec->VirtualAddress = virt_addr;
-		sec->SizeOfRawData = size_of_raw_data;
+		sec->VirtualAddress   = virt_addr;
+		sec->SizeOfRawData    = size_of_raw_data;
 		sec->PointerToRawData = pointer_to_raw;
-		sec->Characteristics = charact;
+		sec->Characteristics  = charact;
 	}
 
 	int calcImportSize() {
@@ -661,3 +657,7 @@ private:
 };
 
 #endif
+
+/*
+ * I serve the Soviet Union  ☭
+ */

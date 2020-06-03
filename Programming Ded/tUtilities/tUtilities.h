@@ -146,15 +146,6 @@ template<typename T> T& tConvertBytes(char *data) {
 	return (*(T*) (data));
 }
 
-//! Just throws exception and tells some information about this class.
-void tThrowException(const char *message = "tException") {
-	std::cout << "!!!EXCEPTION!!!\n";
-	std::cout << message << "\n";
-	std::cout << "PROGRAM IS TERMINATED!\n";
-	std::cout.flush();
-	exit(-1);
-}
-
 //! Copies one buffer to another.
 template<typename T> void tCopyBuffers(const T *from, T *to, unsigned length) {
 	if (from == NULL || to == NULL) {
@@ -163,6 +154,21 @@ template<typename T> void tCopyBuffers(const T *from, T *to, unsigned length) {
 	for (unsigned i = 0; i < length; i++) {
 		to[i] = from[i];
 	}
+}
+
+//! Just throws exception and tells some information about this class.
+void tThrowException(const char *message = "tException") {
+	std::cout << "!!!EXCEPTION!!!\n";
+	//if (file != 0) {
+	//	std::cout << "IN FILE " << file << "\n";
+	//}
+	//if (line != -1) {
+	//	std::cout << "IN LINE " << line << "\n";
+	//}
+	std::cout << message << "\n";
+	std::cout << "PROGRAM IS TERMINATED!\n";
+	std::cout.flush();
+	exit(-1);
 }
 
 //!Gives file size in bytes.
