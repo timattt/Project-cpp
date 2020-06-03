@@ -27,9 +27,8 @@
 ## Пример
 Пусть мы хотим написать парсер, который будет анализировать строки вида имя, двоеточие, номер.
 
-![Image of example]("https://github.com/timattt/Programming-C-MIPT-timattt/blob/master/gram_example.png")
+![Image of example](https://github.com/timattt/Programming-C-MIPT-timattt/blob/master/gram_example.png)
 
-Вот так.
 ## Примеры грамматик
 - __A ::=...;__  \(Объявляем нетерминал А)
 - __A ::=["abc"];__  (Нетерминал А определен как строка "abc")
