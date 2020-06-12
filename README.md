@@ -3,7 +3,7 @@
 Из них можно выделить несколько, которые представляют наибольший интерес, краткая сводка по ним следует далее.
 
 # Навигатор по репозиторию
-### [Компилятор компиляторов](https://github.com/timattt/Programming-C-MIPT-timattt/blob/master/Programming%20Ded/tGrammarParser/tGrammarParserParser/tGrammarParserParser.h)  
+[Компилятор компиляторов](https://github.com/timattt/Programming-C-MIPT-timattt/blob/master/Programming%20Ded/tGrammarParser/tGrammarParserParser/tGrammarParserParser.h)`#f03c15`  
 [Интерпретируемый язык высокого уровня](https://github.com/timattt/Programming-C-MIPT-timattt/tree/master/Programming%20Ded/tGrammarParser)  
 [PE манипулятор](https://github.com/timattt/Programming-C-MIPT-timattt/tree/master/Programming%20Ded/tPE_Editor)  
 [Эмулятор процессора и транслятор самодельного машинного кода в системный байткод](https://github.com/timattt/Programming-C-MIPT-timattt/tree/master/Programming%20Ded/tProcessor)  
