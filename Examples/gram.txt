@@ -1,0 +1,6 @@
+G::=HEAD;
+HEAD::=NAME[":"]NUMBER;
+NAME::=S1+;
+S1::=["a-z"];
+NUMBER::=S2+;
+S2::=["0-9"];

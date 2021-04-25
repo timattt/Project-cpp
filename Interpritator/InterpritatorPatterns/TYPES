@@ -1,0 +1,25 @@
+#define TO_BTS(k) tString res = {}; \
+	res.tResize(4); \
+	tWriteBytes(k, res.__tArray());\
+	return res;
+TYPE(int, 4, {
+	int a = CONV(int, f);
+	int b = CONV(int, s);
+	TO_BTS((a + b));
+}, {
+	
+	int a = CONV(int, f);
+	int b = CONV(int, s);
+	TO_BTS((a * b));
+}, {
+	int a = CONV(int, f);
+	TO_BTS((-a));
+}, {
+	int a = CONV(int, f);
+	int b = CONV(int, s);
+	TO_BTS((a / b));
+}, {
+	TO_BTS(data.tToInt());
+}, {
+	return tString(CONV(int, data));
+})

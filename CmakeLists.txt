@@ -1,0 +1,22 @@
+cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
+
+project("timattt's projects")
+
+add_subdirectory(Akinator)
+add_subdirectory(Compilers)
+add_subdirectory(Expressions)
+add_subdirectory(GrammarParsing)
+add_subdirectory(Interpritator)
+add_subdirectory(PE_Editor)
+add_subdirectory(Storage)
+add_subdirectory(Utilities)
+add_subdirectory(Run)
+
+target_link_libraries(TIMATTT_S_PROJECTS Akinator Compilers Expressions GrammarParsing Interpritator PE_Editor Storage Utilities)
+target_link_libraries(AKINATOR Akinator Compilers Expressions GrammarParsing Interpritator PE_Editor Storage Utilities)
+target_link_libraries(GRAMMAR Akinator Compilers Expressions GrammarParsing Interpritator PE_Editor Storage Utilities)
+target_link_libraries(COMPILERS Akinator Compilers Expressions GrammarParsing Interpritator PE_Editor Storage Utilities)
+target_link_libraries(INTERPRITATOR Akinator Compilers Expressions GrammarParsing Interpritator PE_Editor Storage Utilities)
+target_link_libraries(EXPRESSIONS Akinator Compilers Expressions GrammarParsing Interpritator PE_Editor Storage Utilities)
+
+

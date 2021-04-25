@@ -1,0 +1,3 @@
+method (void) main() {
+	useFunc out(44);
+}
