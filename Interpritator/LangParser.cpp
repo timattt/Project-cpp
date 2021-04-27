@@ -41,10 +41,12 @@ bool whiles_();
 
 char *s = NULL;
 char *parseArray = NULL;
+char *end = NULL;
 
 tLangNode* intrParse(tString text) {
 	parseArray = text.tToPlainArray();
 	s = parseArray;
+	end = s + strlen(s);
 
 	const char * DOT_NAME = "INTR_PROGRAM_GRAMMAR";
 	const char * IMG_NAME = "INTR_PROGRAM_GRAMMAR_IMG";
@@ -66,7 +68,7 @@ tLangNode* intrParse(tString text) {
 	DeleteFileA(DOT_NAME);
 
 	if (*s != '\0') {
-		std::cout << "END PART: " << s << "\n";
+		std::cout << "END PART: [" << s << "]\n";
 		THROW_T_EXCEPTION("ERROR WHILE PARSING! END IS NOT REACHED! ");
 	}
 
@@ -78,6 +80,17 @@ tLangNode* intrParse(tString text) {
 
 	return root;
 }
+
+#define FARM(STR) {int vvv = strlen(STR);ENSURE(s + vvv < end, "Out of range");for (int l = 0; l < vvv; l++) {if (s[l] != STR[l]) {THROW_T_EXCEPTION((tString("Expected ") + STR).tToPlainArray());}}s+=vvv; }
+
+#define PLUS_ONE \
+s++;\
+	ENSURE(s <= end, "Out of range");
+
+#define PLUS(K)\
+	s+=K;\
+	ENSURE(s <= end, "Out of range");
+#define TRY_PLUS(K) //if ((s + K) >= end) {return 0;}
 
 tLangNode* code() {
 	tLangNode *res = new tLangNode("code");
@@ -92,6 +105,7 @@ tLangNode* code() {
 }
 
 bool func_() {
+	TRY_PLUS(3);
 	return *(s) == 'm' && *(s + 1) == 'e' && *(s + 2) == 't' && *(s + 3) == 'h';
 }
 
@@ -99,23 +113,23 @@ tLangNode* func() {
 	__tGoInto("func");
 	tLangNode *res = new tLangNode("func");
 
-	s += 6; //method
+	FARM("method");
 	E();
-	s++; //(
-	E();
-	res->addChild(name());
-	E();
-	s++; //)
+	FARM("(");
 	E();
 	res->addChild(name());
 	E();
-	s++; // (
+	FARM(")");
+	E();
+	res->addChild(name());
+	E();
+	FARM("(");
 	E();
 	if (create_()) {
 		res->addChild(create());
 		E();
 	}
-	s++; //)
+	FARM(")");
 	E();
 	res->addChild(block());
 	E();
@@ -146,20 +160,20 @@ tLangNode* statement() {
 }
 
 bool whiles_() {
+
 	return *s == 'w' && *(s + 1) == 'h' && *(s + 2) == 'i' && *(s + 3) == 'l'
 			&& *(s + 4) == 'e';
 }
 
 tLangNode* ifs() {
 	__tGoInto("ifs");
-	s += 2; // if
+	FARM("if");
 	E();
-	s++; //(
+	FARM("(");
 	tLangNode *res = new tLangNode("if");
 	E();
 	res->addChild(expr());
-	s++;
-	//)
+	FARM(")");
 	E();
 	res->addChild(block());
 	__tGoOut();
@@ -167,10 +181,12 @@ tLangNode* ifs() {
 }
 
 bool ifs_() {
+	TRY_PLUS(1);
 	return *s == 'i' && *(s + 1) == 'f';
 }
 
 bool returns_() {
+	TRY_PLUS(3);
 	return *(s) == 'r' && *(s + 1) == 'e' && *(s + 2) == 't' && *(s + 3) == 'u';
 }
 
@@ -178,7 +194,7 @@ tLangNode* returns() {
 	__tGoInto("return");
 	tLangNode *res = new tLangNode("return");
 
-	s += 6; //return
+	FARM("return"); //return
 
 	E();
 	res->addChild(expr());
@@ -192,13 +208,13 @@ tLangNode* useFunc() {
 	__tGoInto("useFunc");
 	tLangNode *res = new tLangNode("useFunc");
 
-	s += 7; //usefunc
+	FARM("useFunc"); //usefunc
 
 	E();
 
 	res->addChild(name());
 
-	s++; //(
+	FARM("(");
 
 	E();
 
@@ -206,14 +222,14 @@ tLangNode* useFunc() {
 		res->addChild(expr());
 		E();
 		while (*s == ',') {
-			s++; //,
+			FARM(",");
 			E();
 			res->addChild(expr());
 			E();
 		}
 	}
 
-	s++; //)
+	FARM(")");
 
 	__tGoOut();
 	return res;
@@ -221,16 +237,16 @@ tLangNode* useFunc() {
 
 tLangNode* whiles() {
 	tLangNode *res = new tLangNode("while");
-	s += 5; //while
+	FARM("while");
 
 	E();
-	s++; //(
+	FARM("(");
 
 	E();
 
 	res->addChild(expr());
 
-	s++; //)
+	FARM(")");
 	E();
 
 	res->addChild(block());
@@ -240,7 +256,7 @@ tLangNode* whiles() {
 
 tLangNode* block() {
 	__tGoInto("block");
-	s++; //{
+	FARM("{");
 	tLangNode *nd = new tLangNode("{}");
 	E();
 	while (*s != '}' && (action_() || statement_())) {
@@ -249,7 +265,7 @@ tLangNode* block() {
 		if (action__) {
 			nd->addChild(action());
 			E();
-			s++; //;
+			FARM(";");
 		}
 		if (block__) {
 			nd->addChild(statement());
@@ -257,7 +273,7 @@ tLangNode* block() {
 		E();
 	}
 
-	s++; //}
+	FARM("}");
 
 	__tGoOut();
 	return nd;
@@ -268,6 +284,7 @@ bool statement_() {
 }
 
 bool block_() {
+	TRY_PLUS(0);
 	return *s == '{';
 }
 
@@ -308,7 +325,7 @@ tLangNode* assign() {
 
 	res->addChild(name());
 	E();
-	s++;
+	FARM("=");
 	E();
 	res->addChild(expr());
 	__tGoOut();
@@ -322,7 +339,7 @@ bool assign_() {
 
 tLangNode* create() {
 	__tGoInto("create");
-	s += 3;
+	FARM("var");
 
 	tLangNode *res = new tLangNode("var");
 
@@ -336,6 +353,7 @@ tLangNode* create() {
 }
 
 bool create_() {
+	TRY_PLUS(2);
 	return *s == 'v' && *(s + 1) == 'a' && *(s + 2) == 'r';
 }
 
@@ -344,16 +362,26 @@ tLangNode* expr() {
 	tLangNode *res = new tLangNode("+");
 	tLangNode *minus = new tLangNode("-");
 	E();
-	if (*s == '+' || *s == '-') {
-		s++;
+	if (*s == '-') {
+		FARM("-");
+		E();
 		minus->addChild(T());
 	} else {
+		if (*s == '+') {
+			FARM("+");
+		}
+		E();
 		res->addChild(T());
 	}
+
 	E();
 	while (*s == '+' || *s == '-') {
 		char op = *s;
-		s++;
+		if (*s == '+') {
+			FARM("+");
+		} else {
+			FARM("-");
+		}
 		E();
 		if (op == '+') {
 			res->addChild(T());
@@ -382,7 +410,11 @@ tLangNode* T() {
 
 	while (*s == '*' || *s == '/') {
 		char op = *s;
-		s++;
+		if (op == '*') {
+			FARM("*");
+		} else {
+			FARM("/");
+		}
 		E();
 		tLangNode *p = P();
 		E();
@@ -401,9 +433,9 @@ tLangNode* P() {
 	__tGoInto("P");
 	tLangNode *res = NULL;
 	if (*s == '(') {
-		s++;
+		FARM("(");
 		res = expr();
-		s++;
+		FARM(")");
 	} else {
 		res = V();
 	}
@@ -417,10 +449,12 @@ bool T_() {
 }
 
 bool P_() {
+	TRY_PLUS(0);
 	return (*s == '(' || V_() || useFunc_());
 }
 
 bool name_() {
+	TRY_PLUS(0);
 	return (*s <= 'Z' && *s >= 'A') || (*s <= 'z' && *s >= 'a') || *s == '_';
 }
 
@@ -429,11 +463,11 @@ tLangNode* name() {
 	tString result = { };
 
 	result += *s;
-	s++;
+	PLUS_ONE;
 	while ((*s <= 'Z' && *s >= 'A') || (*s <= 'z' && *s >= 'a')
 			|| ('0' <= *s && *s <= '9') || *s == '_') {
 		result += *s;
-		s++;
+		PLUS_ONE;
 	}
 
 	tLangNode *res = new tLangNode(result);
@@ -448,6 +482,7 @@ bool expr_() {
 }
 
 bool useFunc_() {
+	TRY_PLUS(3);
 	return *s == 'u' && *(s + 1) == 's' && *(s + 2) == 'e' && *(s + 3) == 'F';
 }
 
@@ -483,8 +518,9 @@ tLangNode* N() {
 	__tGoInto("N");
 	int val = 0;
 
-	for (; N_(); s++) {
+	while (N_()) {
 		val = val * 10 + (*s - '0');
+		PLUS_ONE;
 	}
 
 	tLangNode *res = new tLangNode(val);
@@ -495,18 +531,20 @@ tLangNode* N() {
 }
 
 bool N_() {
+	TRY_PLUS(0);
 	return *s <= '9' && '0' <= *s;
 }
 
 void E() {
 	__tGoInto("E");
 	while (E_()) {
-		s++;
+		PLUS_ONE;
 	}
 	__tGoOut();
 }
 
 bool E_() {
+	TRY_PLUS(0);
 	return (*s) == ' ' || (*s) == '\n' || (*s) == '\t';
 }
 

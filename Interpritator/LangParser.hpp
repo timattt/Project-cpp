@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <winbase.h>
 #include <iostream>
+#include <cstdio>
+#include <cstring>
 
 #include "../Utilities/CallTreeBuilder.hpp"
 #include "../Utilities/FileHandler.hpp"

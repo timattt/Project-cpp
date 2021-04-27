@@ -286,10 +286,13 @@ void intrRun(int argc, char * argv[]) {
 
 	tLangNode *head = intrParse(text);
 
+
+	NOT_NULL(head);
+
 	intrInit(head);
 	intrRunProgram();
 
-	printf("Program finished OK\n");
+	printf("Program finished OK\n");fflush(stdout);
 
-	delete head;
+//	delete head;
 }

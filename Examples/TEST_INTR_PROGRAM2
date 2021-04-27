@@ -1,0 +1,12 @@
+method (void) main() {
+	var int a;
+	var int b;
+	var int c;
+	
+	a = useFunc in();
+	b = useFunc in();
+	
+	c = a + b;
+	
+	useFunc out(c);
+}

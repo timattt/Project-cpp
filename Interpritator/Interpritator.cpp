@@ -90,4 +90,3 @@ tString intrRunProgram(tLangNode *cur) {
 
 	return res;
 }
-

@@ -53,13 +53,13 @@ public:
 
 	// Const
 	//-------------------------
-	char* 		__tArray			() 								const;//! Link to array
+	char* 		__tArray		() 								const;//! Link to array
 	unsigned	tSize			() 								const;//! Link to tSize
 	tString 	tCropFirst		() 								const;//! Returns string with deleted first symbol.
 	tString 	tCropLast		() 								const;//! Returns string with deleted last symbol.
 	void 		tWrite			() 								const;//! Writes this string to console.
 	tString 	operator+		(tString other) 				const;//! Generates new string with concatenation.
-	void 		tOut				() 								const;//! Writes this string in the new line. And flushes stream.
+	void 		tOut			() 								const;//! Writes this string in the new line. And flushes stream.
 	int 		tToInt			() 								const;//! Converts this string to int.
 	float 		tToFloat		() 								const;//! Converts this string to float.
 	tString 	tSubstring		(unsigned start, unsigned end) 	const;//! Gives substring [start, end].

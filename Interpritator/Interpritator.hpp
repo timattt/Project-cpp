@@ -8,6 +8,7 @@
 #include "../Storage/tList.hpp"
 #include "../Utilities/CallTreeBuilder.hpp"
 #include "../Utilities/String.hpp"
+#include "../Utilities/Utilities.hpp"
 #include "GrammarParserUtilities.hpp"
 #include "LangParser.hpp"
 //===========================================

@@ -70,7 +70,6 @@ void __tGoOut(tString ret) {
 
 	//tString from =
 	call_hierarchy.tRemoveLast().x;
-
 /*
 	if (call_hierarchy.tGetSize() >= 1) {
 		tString to = call_hierarchy.tGetLastElement().x;
