@@ -87,6 +87,6 @@ A("abcde") -> C("abcde") -> B("abc")
 * ``` \COMPILERS.exe --transToSys --texe "TEXE_ИСХОДНИК" "EXE_РЕЗУЛЬТАТ" ``` - транслировать TEXE в EXE    
 * ``` \COMPILERS.exe --disasm --texe "TEXE_ИСХОДНИК" "TASM_РЕЗУЛЬТАТ" ``` - дизассемблировать TEXE в TASM
 
-## Интерпретатор
+### Интерпретатор
 Доступны следующие команды:   
 * ``` INTERPRITATOR.exe "ВАШ_ИСХОДНИК" ``` - зупастить программу   
