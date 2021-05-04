@@ -57,7 +57,7 @@
 ### Пример
 Пусть мы хотим написать парсер, который будет анализировать строки вида имя, двоеточие, номер.
 
-![Image of example](https://github.com/timattt/Programming-C-MIPT-timattt/blob/master/About/gram_example.png)
+![Image of example](https://github.com/timattt/Project-cpp/blob/master/About/gram_example.png)
 
 ### Примеры грамматик
 - __A ::=...;__  \(Объявляем нетерминал А)
@@ -77,13 +77,13 @@ A("abcde") -> C("abcde") -> B("abc")
 ## Интерпретатор
 В конце первого семестра я написал язык программирования, но это был интерпретируемый язык, т.е. он выполнялся непосредственно в виде дерева, без перехода в асм, синтаксис примерно похож на C.
 Вот простойт пример работы интерпретатора. Программа вычисляет значение (2*n)!
-![](https://github.com/timattt/Programming-C-MIPT-timattt/blob/master/About/lang_example.png)
+![](https://github.com/timattt/Project-cpp/blob/master/About/lang_example.png)
 
 ## Компиляторы
 Вот крупный подпроект на тему компиляторов. Тут есть мой собственный ассемблер, который можно преобразовать в самодельный машинный код, после чего запустить.
 Более того, этот самодельный машинный код можно транслировать в реальный байт-код архитектуры x86, в процессе просто будет создан обычный exe-шник. 
 Вот наглядная иллюстрация работы всего этого.
-![](https://github.com/timattt/Programming-C-MIPT-timattt/blob/master/About/exe_example.jpg)
+![](https://github.com/timattt/Project-cpp/blob/master/About/exe_example.jpg)
 
 ## Выражения
 Небольшая задача о калькуляторе. Эта программа может посчитать заданное выражение, может продифференцировать заданное выражение,
