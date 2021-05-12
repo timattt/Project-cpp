@@ -18,5 +18,6 @@ target_link_libraries(GRAMMAR Akinator Compilers Expressions GrammarParsing Inte
 target_link_libraries(COMPILERS Akinator Compilers Expressions GrammarParsing Interpritator PE_Editor Storage Utilities)
 target_link_libraries(INTERPRITATOR Akinator Compilers Expressions GrammarParsing Interpritator PE_Editor Storage Utilities)
 target_link_libraries(EXPRESSIONS Akinator Compilers Expressions GrammarParsing Interpritator PE_Editor Storage Utilities)
+target_link_libraries(TREAP_TEST Akinator Compilers Expressions GrammarParsing Interpritator PE_Editor Storage Utilities)
 
 file(COPY "${PROJECT_SOURCE_DIR}/Examples" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/")

@@ -3,6 +3,24 @@
 #include "../Utilities/Utilities.hpp"
 #include "Run.hpp"
 
+#ifdef BUILD_TREAP
+
+int main(int argc, char *argv[]) {
+	__tNewBranch();
+	try {
+		treapRun(argc - 1, argv + 1);
+
+	} catch (tException *ex) {
+		printf("Something bad happens...\n");
+		ex->print();
+	}
+
+	__tFlushBranch();
+	return 0;
+}
+
+#endif
+
 #ifdef BUILD_COM
 
 int main(int argc, char *argv[]) {

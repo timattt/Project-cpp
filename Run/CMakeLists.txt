@@ -17,3 +17,6 @@ set_target_properties(GRAMMAR PROPERTIES COMPILE_FLAGS -DBUILD_GRAM)
 
 add_executable(INTERPRITATOR Run.cpp Starter.cpp)
 set_target_properties(INTERPRITATOR PROPERTIES COMPILE_FLAGS -DBUILD_INTR)
+
+add_executable(TREAP_TEST Run.cpp Starter.cpp)
+set_target_properties(TREAP_TEST PROPERTIES COMPILE_FLAGS -DBUILD_TREAP)

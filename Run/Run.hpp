@@ -1,5 +1,6 @@
 #pragma once
 
+void treapRun(int argc, char * argv[]);
 void comRun(int argc, char * argv[]);
 void akRun(int argc, char * argv[]);
 void exprRun(int argc, char * argv[]);

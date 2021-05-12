@@ -13,6 +13,58 @@
 #include "../Utilities/FileHandler.hpp"
 #include "../Utilities/String.hpp"
 #include "../Utilities/Utilities.hpp"
+#include "../Storage/Treap.hpp"
+
+void treapRun(int argc, char * argv[]) {
+	printf("Input n...\n");
+	
+	int n = 0;
+	scanf("%d", &n);
+	
+	printf("Input n numbers...\n");
+	
+	TREAP tr = EMPTY_TREAP;
+	
+	for (int i = 0; i < n; i++) {
+		int a = 0;
+		scanf("%d", &a);
+		TREAP_INSERT_ELEMENT(tr, a);
+	}
+	
+	while (1) {
+		printf("Choose operation: a - add, c - contains, r - remove, e - exit\n");
+		char op = 0;
+		scanf(" %c", &op);
+		getchar();
+		if (op == 'a') {
+			printf("Insert number to add...\n");
+			int a = 0;
+			scanf("%d", &a);
+			TREAP_INSERT_ELEMENT(tr, a);
+		}
+		if (op == 'c') {
+			printf("Insert number to check contains...\n");
+			int a = 0;
+			scanf("%d", &a);
+			if (TREAP_CONTAINS(tr, a) == 1) {
+				printf("Found!\n");
+			} else {
+				printf("Not found!\n");
+			}
+		}
+		if (op == 'r') {
+			printf("Insert number to remove...\n");
+			int a = 0;
+			scanf("%d", &a);
+			TREAP_ERASE(tr, a);
+		}
+		if (op == 'e') {
+			break;
+		}
+		TREAP_PRINT(tr);
+	}
+
+}
 
 void comRun(int argc, char * argv[]) {
 
