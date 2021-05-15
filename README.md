@@ -91,3 +91,7 @@ A("abcde") -> C("abcde") -> B("abc")
 
 ## Акинатор
 Самодельный аналог известной программы https://ru.akinator.com/
+
+## ASM
+Также в этом репозитории есть мини-проекты написанные на ассемблере.
+Вот [тут](http://www.firststeps.ru/asm/tasm1.html) и [тут](http://www.techhelpmanual.com/2-main_menu.html) есть хорошие статьи про TASM.
